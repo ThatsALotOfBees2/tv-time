@@ -8,7 +8,6 @@ built-in chiptune sound:
   land     each letter landing
   bang     the "!" (flash and star burst)
   sparkle  stars twinkling afterwards
-  blip     each letter typed in the dialogue box
   cheer    the crowd after the voice line
   jingle   the fanfare, only when there is no voice line
 

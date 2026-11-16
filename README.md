@@ -31,8 +31,7 @@ seconds, any button skips it):
 3. **"IT'S TV TIME!"** drops in letter by letter, in time with the voice line - every letter lands
    with a *bwip* and a screen shake
 4. the "!" sets off a white flash, a star burst and a chiptune fanfare
-5. a dialogue box types out "NOW SHOWING ON YOUR TV!" with text blips, then a pixel circle opens
-   onto the start page
+5. applause, then a pixel circle opens onto the start page
 
 It plays once per start-up; *Add / edit sites* has an on/off switch and a *Play it now* button.
 Everything is drawn on one 180-pixel-high canvas (`web/start/intro.js`).
@@ -51,7 +50,6 @@ from the clip's length. Without any clip, an 8-bit fanfare plays instead.
 | `land` | each letter landing |
 | `bang` | the "!" (flash and star burst) |
 | `sparkle` | stars twinkling afterwards |
-| `blip` | each letter typed in the dialogue box |
 | `cheer` | the crowd after the voice line |
 | `jingle` | the fanfare, only when there is no voice line |
 

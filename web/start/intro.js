@@ -3,8 +3,8 @@
  *
  *   old TV switches on -> static + "CH 03" -> flash -> pixel stage with spotlights, stars and
  *   chasing bulbs -> "IT'S TV TIME!" drops in letter by letter (each one lands with a bwip and a
- *   screen shake) -> the "!" sets off a flash, a star burst and a fanfare -> a dialogue box types
- *   "NOW SHOWING ON YOUR TV!" -> a circle opens onto the start page.
+ *   screen shake) -> the "!" sets off a flash, a star burst and a fanfare -> applause -> a circle
+ *   opens onto the start page.
  *
  * Everything is drawn on a 180-pixel-high canvas scaled up with hard pixel edges.
  *
@@ -12,7 +12,7 @@
  *  - Voice line: intro-sound.mp3 (or .ogg/.wav/.m4a) next to this file. The letters land in time
  *    with it, using the word timings in intro-sound-timing.js (estimated if that file is missing).
  *  - Sound effects are chiptune-style and synthesised here. Any of them can be replaced by a file
- *    in the sfx/ folder: power, channel, land, bang, sparkle, blip, cheer, jingle (.mp3/.ogg/.wav).
+ *    in the sfx/ folder: power, channel, land, bang, sparkle, cheer, jingle (.mp3/.ogg/.wav).
  *    "jingle" plays only when there is no voice line.
  *
  * Plays once per start-up. Switch it off or replay it from "Add / edit sites".
@@ -23,7 +23,7 @@
   var PREF = 'tvtime.intro';
   var SHOWN = 'tvtime.introShown';
   var EXTS = ['mp3', 'ogg', 'wav', 'm4a'];
-  var SFX_NAMES = ['power', 'channel', 'land', 'bang', 'sparkle', 'blip', 'cheer', 'jingle'];
+  var SFX_NAMES = ['power', 'channel', 'land', 'bang', 'sparkle', 'cheer', 'jingle'];
   var running = false;
 
   function enabled() {
@@ -160,9 +160,6 @@
       sparkle: function () {
         var t = now();
         [0, 0.06, 0.12].forEach(function (d, k) { tone('triangle', t + d, 0.08, 2200 + k * 500, 3300 + k * 500, 0.06); });
-      },
-      blip: function () {
-        tone('square', now(), 0.03, 620 + Math.random() * 60, null, 0.05);
       },
       cheer: function () {
         // studio audience: lots of tiny claps
@@ -328,7 +325,7 @@
       if (!withSound) return;
       var f = files[name];
       if (f) {
-        try { var a = f.cloneNode(); a.volume = name === 'blip' ? 0.6 : 1; a.play().catch(function () {}); } catch (e) {}
+        try { f.cloneNode().play().catch(function () {}); } catch (e) {}
       } else if (synth && synth[name]) {
         synth[name](arg);
       }
@@ -343,8 +340,6 @@
     var exitAt = -1, exitDur = 0.7;
     var finished = false;
     var played = {};
-    var typed = 0;
-    var DIALOG = 'NOW SHOWING ON YOUR TV!';
     function once(key) { if (played[key]) return false; played[key] = true; return true; }
 
     var stars = [];
@@ -479,23 +474,6 @@
       });
     }
 
-    function drawDialog(s) {
-      var bx = 10, bw = W - 20, bh = 30, by = H - bh - 10;
-      rect(bx - 1, by - 1, bw + 2, bh + 2, PAL.black);
-      rect(bx, by, bw, bh, PAL.white);
-      rect(bx + 2, by + 2, bw - 4, bh - 4, PAL.black);
-      var n = Math.min(DIALOG.length, Math.floor((s - endAt) / 0.045) + 1);
-      while (typed < n) {
-        if (DIALOG.charAt(typed) !== ' ') sfx('blip');
-        typed++;
-      }
-      drawText(c, DIALOG.slice(0, n), bx + 10, by + 11, 1, { fill: PAL.white });
-      if (n === DIALOG.length && Math.floor(s * 3) % 2 === 0) {
-        var ax = bx + bw - 12, ay = by + bh - 9;
-        rect(ax, ay, 5, 1, PAL.gold); rect(ax + 1, ay + 1, 3, 1, PAL.gold); rect(ax + 2, ay + 2, 1, 1, PAL.gold);
-      }
-    }
-
     function drawStatic(T) {
       for (var k = 0; k < noisePx.length; k++) {
         var v = (Math.random() * 200) | 0;
@@ -578,8 +556,7 @@
         drawParticles(dt);
         if (s >= endAt) {
           if (once('cheer')) sfx('cheer');
-          drawDialog(s);
-          if (exitAt < 0 && s > endAt + DIALOG.length * 0.045 + 1.1) exitAt = T;
+          if (exitAt < 0 && s > endAt + 1.2) exitAt = T;
         } else if (wall > 0.3) {
           var hint = isMuted() ? 'PRESS ANY BUTTON FOR SOUND' : 'PRESS ANY BUTTON TO SKIP';
           drawText(c, hint, W - textWidth(hint, 1) - 12, H - 18, 1, { fill: isMuted() ? PAL.gold : '#8f7fb8' });
