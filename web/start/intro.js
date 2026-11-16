@@ -199,6 +199,8 @@
         lead.forEach(function (m, k) { if (m) tone('square', t + k * step, step * (k === 8 ? 5 : 0.9), hz(m), hz(m), 0.08); });
         [48, 55, 52, 55, 48].forEach(function (m, k) { tone('triangle', t + k * step * 2, step * (k === 4 ? 6 : 1.8), hz(m), hz(m), 0.2); });
       },
+      // true when the browser hasn't allowed sound yet (it needs a button press first)
+      blocked: function () { return ctx.state !== 'running'; },
       stop: function () {
         try {
           master.gain.setTargetAtTime(0, now(), 0.06);
@@ -316,6 +318,7 @@
     var files = {};
     var voice = null;
     var ready = false;
+    var soundBlocked = false;
     var loads = withSound
       ? Promise.all([loadAudio('intro-sound', 1300), loadSfxFiles()])
       : Promise.resolve([null, {}]);
@@ -515,7 +518,7 @@
         timing = window.TVTIME_INTRO_TIMING ||
           { its: d * 0.02, t: d * 0.25, v: d * 0.41, time: d * 0.58, bang: d * 0.87 };
         endAt = Math.max(d, timing.bang + 0.6);
-        voice.play().catch(function () {});
+        voice.play().catch(function () { soundBlocked = true; });
       } else {
         timing = DEFAULT_TIMING;
         endAt = 2.7;
@@ -578,7 +581,8 @@
           drawDialog(s);
           if (exitAt < 0 && s > endAt + DIALOG.length * 0.045 + 1.1) exitAt = T;
         } else if (wall > 0.3) {
-          drawText(c, 'PRESS ANY BUTTON TO SKIP', W - textWidth('PRESS ANY BUTTON TO SKIP', 1) - 12, H - 18, 1, { fill: '#8f7fb8' });
+          var hint = isMuted() ? 'PRESS ANY BUTTON FOR SOUND' : 'PRESS ANY BUTTON TO SKIP';
+          drawText(c, hint, W - textWidth(hint, 1) - 12, H - 18, 1, { fill: isMuted() ? PAL.gold : '#8f7fb8' });
         }
       }
 
@@ -623,8 +627,18 @@
       root.remove();
       running = false;
     }
+    // Some browsers only allow sound after a button press. Then the first press restarts the
+    // show with sound instead of skipping it.
+    function isMuted() { return withSound && !opts.retry && (soundBlocked || (synth && synth.blocked())); }
     function skip() {
       if (exitAt >= 0) return;
+      // ignore the tail of the press that started this show (e.g. the click after a touch)
+      if (performance.now() - t0 < 400) return;
+      if (isMuted()) {
+        end();
+        play({ retry: true });
+        return;
+      }
       exitAt = (performance.now() - t0) / 1000;
       exitDur = 0.45;
       if (voice) voice.pause();
