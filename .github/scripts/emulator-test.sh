@@ -12,6 +12,7 @@ key() { adb shell input keyevent "$@"; }
 # Landscape, like a TV
 adb shell settings put system accelerometer_rotation 0
 adb shell settings put system user_rotation 1
+adb shell wm user-rotation lock 1 >/dev/null 2>&1 || true
 
 adb install -r out/tv-time.apk
 adb logcat -c
@@ -34,6 +35,10 @@ key DPAD_RIGHT DPAD_CENTER; shot 13-youtube-opened 15
 key BACK;                   shot 14-back-again 3
 
 adb logcat -d > "$OUT/logcat.txt"
+echo "--- app-related log lines (crashes, kills, renderer) ---"
+grep -E "Fatal signal|tombstone|AndroidRuntime|FATAL|com\.tvtime\.app|Render process|renderer|lowmemorykiller|Killing|has died|ANR in" "$OUT/logcat.txt" \
+  | grep -vE "Crashpad: No such file" | tail -60
+echo "--- end ---"
 STATUS=0
 if grep -q "FATAL EXCEPTION" "$OUT/logcat.txt"; then
   echo "::error::The app crashed - see logcat.txt"

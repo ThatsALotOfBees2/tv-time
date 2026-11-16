@@ -10,6 +10,7 @@ version() { adb shell dumpsys package "$PKG" | grep -o 'versionCode=[0-9]*' | he
 
 adb shell settings put system accelerometer_rotation 0
 adb shell settings put system user_rotation 1
+adb shell wm user-rotation lock 1 >/dev/null 2>&1 || true
 adb install -r upd/old.apk
 echo "installed: $(version)"
 # Android asks the user once to allow installing apps; grant it the way the user would.

@@ -111,9 +111,11 @@
         android:visibility="gone">
 
         <LinearLayout
-            android:layout_width="560dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
+            android:layout_marginLeft="48dp"
+            android:layout_marginRight="48dp"
             android:background="@drawable/update_panel"
             android:orientation="vertical"
             android:padding="32dp">
