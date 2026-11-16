@@ -1,0 +1,50 @@
+name: Build APK
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease
+          mkdir -p out
+          cp app/build/outputs/apk/release/app-release.apk out/tv-time.apk
+
+      - name: Upload APK (download from the run's Summary page)
+        uses: actions/upload-artifact@v4
+        with:
+          name: tv-time-apk
+          path: out/tv-time.apk
+
+      # On the main branch, also publish to a "latest" release so the TV can download it
+      # directly by URL (e.g. with the Downloader app):
+      # https://github.com/<owner>/<repo>/releases/latest/download/tv-time.apk
+      - name: Publish "latest" release
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: TV Time (latest build)
+          body: "Automatic build of ${{ github.sha }}. Install tv-time.apk on your Android TV / phone."
+          files: out/tv-time.apk
+          make_latest: true
