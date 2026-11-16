@@ -73,11 +73,16 @@ jobs:
           path: tv-time-pi-extension.zip
 
   emulator-test:
-    # Installs the APK on an Android emulator and drives it with remote-control keys only,
-    # taking a screenshot after every step (download "emulator-test-results" from the run).
+    # Installs the APK on Android emulators (an older and a current Android version) and drives it
+    # with remote-control keys only, taking a screenshot after every step
+    # (download "emulator-test-results-api<N>" from the run).
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [30, 34]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -92,7 +97,7 @@ jobs:
       - name: Run the app like a TV remote would
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 30
+          api-level: ${{ matrix.api }}
           target: google_apis
           arch: x86_64
           disable-animations: true
@@ -102,5 +107,19 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: emulator-test-results
+          name: emulator-test-results-api${{ matrix.api }}
           path: test-out
+      - name: Print small copies of the screenshots (base64 JPEG, for reviewing from the log)
+        if: always()
+        run: |
+          pip install -q pillow
+          python3 - <<'PY'
+          import base64, glob, io
+          from PIL import Image
+          for f in sorted(glob.glob('test-out/*.png')):
+              im = Image.open(f).convert('RGB')
+              im.thumbnail((480, 480))
+              buf = io.BytesIO()
+              im.save(buf, 'JPEG', quality=60)
+              print('SHOT', f.split('/')[-1], base64.b64encode(buf.getvalue()).decode())
+          PY
