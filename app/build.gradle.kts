@@ -11,8 +11,22 @@ android {
         applicationId = "com.tvtime.app"
         minSdk = 21
         targetSdk = 35
-        versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
-        versionName = "1.0." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
+        // -PversionCodeOverride / -PupdateUrl are only used by the update test in CI.
+        val build = (project.findProperty("versionCodeOverride") as String?)
+            ?: System.getenv("GITHUB_RUN_NUMBER") ?: "1"
+        versionCode = build.toInt()
+        versionName = "1.0.$build"
+        // Where the app looks for updates (published by GitHub Actions for every build of main).
+        // An empty value switches the updater off.
+        resValue(
+            "string", "update_url",
+            (project.findProperty("updateUrl") as String?)
+                ?: "https://github.com/ThatsALotOfBees2/tv-time/releases/latest/download/version.json",
+        )
+    }
+
+    buildFeatures {
+        resValues = true
     }
 
     signingConfigs {

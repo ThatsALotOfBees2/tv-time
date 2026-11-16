@@ -78,7 +78,7 @@ The first time, Android asks you to allow TV Time to install apps.
 
 **The repository must be public** (or the releases must be on a public repository) - Android
 can't download release files from a private GitHub repository. To point the app somewhere else,
-change `update_url` in `app/src/main/res/values/strings.xml`; an empty value switches it off.
+change `update_url` in `app/build.gradle.kts`; an empty value switches it off.
 
 ### Installing on a TV
 1. On the TV, enable *Settings -> Device Preferences -> Security -> Unknown sources*
