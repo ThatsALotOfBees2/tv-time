@@ -12,6 +12,14 @@ if [ -z "$BROWSER" ]; then
 fi
 mkdir -p "$PROFILE"
 rm -f "$PROFILE/STOP"
+
+# Update TV Time itself from GitHub before starting (skipped quietly when offline).
+REPO="$(cd "$DIR/.." && pwd)"
+if [ -d "$REPO/.git" ] && [ -z "${TVTIME_NO_UPDATE:-}" ]; then
+  if timeout 60 git -C "$REPO" pull --ff-only -q; then
+    python3 "$DIR/build-extension.py" >/dev/null 2>&1 || true
+  fi
+fi
 xset s off -dpms s noblank 2>/dev/null || true
 
 while [ ! -f "$PROFILE/STOP" ]; do

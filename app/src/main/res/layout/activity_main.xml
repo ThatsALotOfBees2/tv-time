@@ -99,4 +99,62 @@
                 android:paddingBottom="24dp" />
         </ScrollView>
     </LinearLayout>
+
+    <!-- Update screen: shown on start-up when GitHub has a newer version -->
+    <FrameLayout
+        android:id="@+id/update"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#EE07030F"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="560dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@drawable/update_panel"
+            android:orientation="vertical"
+            android:padding="32dp">
+
+            <TextView
+                android:id="@+id/update_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:text="UPDATE AVAILABLE"
+                android:textColor="#FFFFD23F"
+                android:textSize="26sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/update_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:fontFamily="monospace"
+                android:textColor="#FFFFFFFF"
+                android:textSize="17sp" />
+
+            <ProgressBar
+                android:id="@+id/update_progress"
+                style="@android:style/Widget.Material.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="18dp"
+                android:layout_marginTop="22dp"
+                android:max="100"
+                android:progressBackgroundTint="#FF2A1050"
+                android:progressTint="#FFFFD23F" />
+
+            <TextView
+                android:id="@+id/update_hint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:fontFamily="monospace"
+                android:textColor="#FFA99AD0"
+                android:textSize="15sp" />
+        </LinearLayout>
+    </FrameLayout>
 </FrameLayout>

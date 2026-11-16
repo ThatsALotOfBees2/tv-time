@@ -34,6 +34,7 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import java.io.File
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 
@@ -48,6 +49,10 @@ class MainActivity : Activity() {
     private lateinit var menu: LinearLayout
     private lateinit var menuItems: LinearLayout
     private lateinit var menuUrl: TextView
+    private lateinit var updateView: View
+    private lateinit var updateText: TextView
+    private lateinit var updateHint: TextView
+    private lateinit var updateProgress: ProgressBar
 
     private lateinit var prefs: SharedPreferences
     private lateinit var adBlocker: AdBlocker
@@ -88,6 +93,11 @@ class MainActivity : Activity() {
         menu = findViewById(R.id.menu)
         menuItems = findViewById(R.id.menu_items)
         menuUrl = findViewById(R.id.menu_url)
+        updateView = findViewById(R.id.update)
+        updateText = findViewById(R.id.update_text)
+        updateHint = findViewById(R.id.update_hint)
+        updateProgress = findViewById(R.id.update_progress)
+        updateView.setOnClickListener { onUpdateOk() }
 
         prefs = getSharedPreferences("tvtime", MODE_PRIVATE)
         adblockOn = prefs.getBoolean(PREF_ADBLOCK, true)
@@ -110,17 +120,145 @@ class MainActivity : Activity() {
         webView.requestFocus()
         cursor.post { cursor.showCursor() }
         osd(getString(R.string.app_name) + "  -  hold OK for menu", 3500)
+        checkForUpdate()
     }
 
     override fun onResume() {
         super.onResume()
         if (!webViewDead) webView.onResume()
         goImmersive()
+        onUpdateResume()
     }
 
     override fun onPause() {
         if (!webViewDead) webView.onPause()
+        if (updateState == UpdateState.INSTALLING) installerShown = true
         super.onPause()
+    }
+
+    // ---------- self-update ----------
+
+    private enum class UpdateState { NONE, DOWNLOADING, FAILED, READY, NEED_PERMISSION, INSTALLING }
+
+    private val updater by lazy { Updater(this) }
+    private var updateState = UpdateState.NONE
+    private var updateRelease: Updater.Release? = null
+    private var updateFile: File? = null
+    private var installerShown = false
+
+    private fun checkForUpdate() {
+        File(cacheDir, "update.apk").delete()
+        Thread {
+            val release = updater.check()
+            if (release != null) runOnUiThread { showUpdate(release) }
+        }.apply { isDaemon = true }.start()
+    }
+
+    private fun showUpdate(release: Updater.Release) {
+        if (isFinishing || updateState != UpdateState.NONE) return
+        updateRelease = release
+        // Stop whatever is playing (the intro) and put the update screen on top of everything.
+        if (customView != null) leaveFullscreen(notifyWebView = true)
+        menu.visibility = View.GONE
+        cursor.hideCursor()
+        webView.loadUrl("about:blank")
+        updateView.visibility = View.VISIBLE
+        updateView.requestFocus()
+        startDownload()
+    }
+
+    private fun startDownload() {
+        val release = updateRelease ?: return
+        updateState = UpdateState.DOWNLOADING
+        updateText.text = "A new version of TV Time (${release.versionName}) is ready.\nDownloading..."
+        updateHint.text = "0%"
+        updateProgress.isIndeterminate = false
+        updateProgress.progress = 0
+        Thread {
+            try {
+                val file = updater.download(release) { percent ->
+                    runOnUiThread {
+                        if (percent < 0) {
+                            updateProgress.isIndeterminate = true
+                            updateHint.text = "Downloading..."
+                        } else {
+                            updateProgress.progress = percent
+                            updateHint.text = "$percent%"
+                        }
+                    }
+                }
+                runOnUiThread {
+                    updateFile = file
+                    updateState = UpdateState.READY
+                    updateProgress.isIndeterminate = false
+                    updateProgress.progress = 100
+                    updateText.text = "Download complete."
+                    updateHint.text = "Press OK to install. TV Time will close - then open it again."
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    updateState = UpdateState.FAILED
+                    updateProgress.isIndeterminate = false
+                    updateText.text = "The download failed. Check the internet connection."
+                    updateHint.text = "OK = try again    BACK = skip for now"
+                }
+            }
+        }.apply { isDaemon = true }.start()
+    }
+
+    /** OK on the update screen. */
+    private fun onUpdateOk() {
+        when (updateState) {
+            UpdateState.FAILED -> startDownload()
+            UpdateState.READY, UpdateState.NEED_PERMISSION -> {
+                if (updater.needsInstallPermission()) {
+                    updateState = UpdateState.NEED_PERMISSION
+                    updateText.text = "Allow TV Time to install updates."
+                    updateHint.text = "Turn on \"Allow from this source\", then press BACK to return here."
+                    try {
+                        startActivity(updater.installPermissionIntent())
+                    } catch (e: Exception) {
+                        updateHint.text = "Open Settings > Apps > TV Time and allow installing apps, then press OK."
+                    }
+                    return
+                }
+                val file = updateFile ?: return startDownload()
+                updateState = UpdateState.INSTALLING
+                installerShown = false
+                updateText.text = "Installing..."
+                updateHint.text = "Confirm the update on the next screen."
+                Thread {
+                    try {
+                        updater.install(file)
+                    } catch (e: Exception) {
+                        runOnUiThread {
+                            updateState = UpdateState.READY
+                            updateText.text = "Could not start the installer."
+                            updateHint.text = "Press OK to try again."
+                        }
+                    }
+                }.apply { isDaemon = true }.start()
+            }
+            else -> {}
+        }
+    }
+
+    /** Coming back from the "allow installs" settings or a cancelled installer. */
+    private fun onUpdateResume() {
+        when {
+            updateState == UpdateState.NEED_PERMISSION && !updater.needsInstallPermission() -> {
+                updateState = UpdateState.READY
+                onUpdateOk()
+            }
+            updateState == UpdateState.NEED_PERMISSION -> {
+                updateHint.text = "Installing updates is not allowed yet. Press OK to open the setting again."
+            }
+            updateState == UpdateState.INSTALLING && installerShown -> {
+                updateState = UpdateState.READY
+                updateText.text = "The update was not installed."
+                updateHint.text = "Press OK to try again."
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -510,6 +648,24 @@ class MainActivity : Activity() {
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val code = event.keyCode
         val down = event.action == KeyEvent.ACTION_DOWN
+
+        // The update screen takes every key: OK continues, BACK leaves (or skips a failed download).
+        if (updateView.visibility == View.VISIBLE) {
+            if (event.action == KeyEvent.ACTION_UP) {
+                if (isOk(code)) {
+                    onUpdateOk()
+                } else if (code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_ESCAPE) {
+                    if (updateState == UpdateState.FAILED) {
+                        updateView.visibility = View.GONE
+                        updateState = UpdateState.NONE
+                        webView.loadUrl(homeUrl())
+                    } else {
+                        finish()
+                    }
+                }
+            }
+            return true
+        }
 
         // Swallow the rest of a key press that already opened the menu.
         if (longPressFired && code == longPressKey) {

@@ -66,6 +66,20 @@ Every push is built automatically by GitHub Actions (`.github/workflows/build.ym
 * **`main` branch:** the APK is also published as a release, so a TV can fetch it directly:
   `https://github.com/ThatsALotOfBees2/tv-time/releases/latest/download/tv-time.apk`
 
+### Automatic updates
+
+Every build of the `main` branch is published as a GitHub release with `tv-time.apk` and
+`version.json`. Each time the app starts it reads
+`https://github.com/ThatsALotOfBees2/tv-time/releases/latest/download/version.json`; if that
+version is newer, an update screen downloads it with a progress bar and then asks you to press OK
+to install. The app can't be used until it's updated (only a *failed* download can be skipped).
+Android shows its own "update this app?" screen; after installing, TV Time closes - open it again.
+The first time, Android asks you to allow TV Time to install apps.
+
+**The repository must be public** (or the releases must be on a public repository) - Android
+can't download release files from a private GitHub repository. To point the app somewhere else,
+change `update_url` in `app/src/main/res/values/strings.xml`; an empty value switches it off.
+
 ### Installing on a TV
 1. On the TV, enable *Settings -> Device Preferences -> Security -> Unknown sources*
    (Fire TV: *My Fire TV -> Developer options -> Install unknown apps*).
@@ -186,7 +200,9 @@ touch ~/.config/tv-time-browser/STOP && pkill -f chromium       # close the TV s
 ~/tv-time/pi/launch.sh &                                        # start it again
 TVTIME_SCALE=1.25 ~/tv-time/pi/launch.sh &                      # bigger text on a large TV
 ```
-To update: `cd ~/tv-time && git pull && ./pi/install.sh`.
+The Pi updates itself: every start-up, `launch.sh` pulls the latest code from GitHub (skipped when
+offline) and rebuilds the extension before Chromium opens. Set `TVTIME_NO_UPDATE=1` to turn that
+off. After an update that changes `install.sh` or the remote service, run `./pi/install.sh` again.
 
 ### The Pi extension
 `pi/extension` is generated from the shared sources by `python3 pi/build-extension.py` (the CI

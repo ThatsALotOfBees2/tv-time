@@ -36,17 +36,26 @@ jobs:
           name: tv-time-apk
           path: out/tv-time.apk
 
-      # On the main branch, also publish to a "latest" release so the TV can download it
-      # directly by URL (e.g. with the Downloader app):
-      # https://github.com/<owner>/<repo>/releases/latest/download/tv-time.apk
-      - name: Publish "latest" release
+      # On the main branch, also publish a release. It carries the APK and version.json, which the
+      # app checks on every start-up to update itself. The newest release is always reachable at
+      # https://github.com/<owner>/<repo>/releases/latest/download/tv-time.apk (or version.json).
+      - name: Write version.json for the in-app updater
+        run: |
+          cat > out/version.json <<EOF
+          {"versionCode": ${{ github.run_number }}, "versionName": "1.0.${{ github.run_number }}", "apk": "https://github.com/${{ github.repository }}/releases/download/build-${{ github.run_number }}/tv-time.apk"}
+          EOF
+          cat out/version.json
+
+      - name: Publish release
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest
-          name: TV Time (latest build)
-          body: "Automatic build of ${{ github.sha }}. Install tv-time.apk on your Android TV / phone."
-          files: out/tv-time.apk
+          tag_name: build-${{ github.run_number }}
+          name: TV Time 1.0.${{ github.run_number }}
+          body: "Automatic build of ${{ github.sha }}. Install tv-time.apk on your Android TV / phone; installed copies update themselves."
+          files: |
+            out/tv-time.apk
+            out/version.json
           make_latest: true
 
   pi:
