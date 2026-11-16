@@ -404,10 +404,12 @@
       var rows = [3, 4, 5, 7, 9, 12, 16];
       var y = hz;
       rows.forEach(function (rh, r) {
+        // cells get wider towards the viewer and are laid out from the centre, so the
+        // checker lines fan out from the middle like a floor in perspective
         var cell = 10 + r * 6;
-        var off = (s * 0.6 * cell) % (cell * 2);
-        for (var cx = -cell * 2 + off; cx < W + cell; cx += cell) {
-          if ((Math.round((cx - off) / cell) + r) % 2 === 0) rect(cx, y, cell, rh, PAL.floor1);
+        var first = -Math.ceil(W / 2 / cell) - 2;
+        for (var k = first; k < -first; k++) {
+          if ((((k + r) % 2) + 2) % 2 === 0) rect(W / 2 + k * cell, y, cell, rh, PAL.floor1);
         }
         y += rh;
       });

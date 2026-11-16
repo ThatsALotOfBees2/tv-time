@@ -9,23 +9,87 @@
   var isExtension = !!(window.chrome && chrome.runtime && chrome.runtime.id);
   var isAndroid = /Android/i.test(navigator.userAgent);
 
+  // ---------- pixel art ----------
+  // Each icon is a grid: '#' = main colour, 'o' = second colour, anything else = empty.
+  var ICONS = {
+    film: [
+      '################',
+      '#.##.##.##.##.##',
+      '################',
+      '#..............#',
+      '#.....#........#',
+      '#.....##.......#',
+      '#.....###......#',
+      '#.....##.......#',
+      '#.....#........#',
+      '################',
+      '#.##.##.##.##.##',
+      '################'
+    ],
+    play: [
+      '..############..',
+      '.##############.',
+      '################',
+      '######o#########',
+      '######oo########',
+      '######ooo#######',
+      '######ooo#######',
+      '######oo########',
+      '######o#########',
+      '################',
+      '.##############.',
+      '..############..'
+    ],
+    tv: [
+      '...o.......o...',
+      '....o.....o....',
+      '.....o...o.....',
+      '###############',
+      '#.............#',
+      '#.....#.......#',
+      '#.....##......#',
+      '#.....###.....#',
+      '#.....##......#',
+      '#.....#.......#',
+      '#.............#',
+      '###############'
+    ],
+    shield: [
+      '#########',
+      '#########',
+      '#########',
+      '#########',
+      '.#######.',
+      '.#######.',
+      '..#####..',
+      '...###...',
+      '....#....'
+    ]
+  };
+  function pixelSvg(rows, main, second) {
+    var h = rows.length, w = rows[0].length, rects = '';
+    rows.forEach(function (row, y) {
+      for (var x = 0; x < w;) {
+        var ch = row.charAt(x);
+        if (ch !== '#' && ch !== 'o') { x++; continue; }
+        var run = 1;
+        while (row.charAt(x + run) === ch) run++;
+        rects += '<rect x="' + x + '" y="' + y + '" width="' + run + '" height="1" fill="' + (ch === '#' ? main : second) + '"/>';
+        x += run;
+      }
+    });
+    return '<svg class="px-icon" viewBox="0 0 ' + w + ' ' + h + '" shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet">' + rects + '</svg>';
+  }
+
   var MAIN_TILES = [
-    {
-      name: 'Streamex', sub: 'Movies & series', url: 'https://streamex.hn/',
-      bg: 'linear-gradient(135deg, #e50914 0%, #8a0710 60%, #3d0307 100%)',
-      icon: '<svg viewBox="0 0 48 48"><rect x="6" y="9" width="36" height="30" rx="4" fill="none" stroke="#fff" stroke-width="3.2"/>' +
-        '<path d="M6 17h36M6 31h36M15 9v8M24 9v8M33 9v8M15 31v8M24 31v8M33 31v8" stroke="#fff" stroke-width="3.2"/></svg>'
-    },
-    {
-      name: 'YouTube', sub: 'Videos, without the ads', url: 'https://www.youtube.com/',
-      bg: 'linear-gradient(135deg, #ff4e45 0%, #c4120a 55%, #520604 100%)',
-      icon: '<svg viewBox="0 0 48 48"><rect x="4" y="10" width="40" height="28" rx="9" fill="#fff"/>' +
-        '<path d="M20 17v14l12-7z" fill="#c4120a"/></svg>'
-    }
+    { name: 'Streamex', sub: 'Movies & series', url: 'https://streamex.hn/', accent: '#ff3d8b',
+      icon: pixelSvg(ICONS.film, '#ffffff') },
+    { name: 'YouTube', sub: 'Videos, no ads', url: 'https://www.youtube.com/', accent: '#ff2b2b',
+      icon: pixelSvg(ICONS.play, '#ffffff', '#07030f') }
   ];
 
   var STORE_KEY = 'tvtime.customSites';
-  var COLORS = ['#2f80ed', '#9b51e0', '#27ae60', '#f2994a', '#eb5757', '#00b8d9', '#d6409f'];
+  var COLORS = ['#4df3ff', '#ffd23f', '#9dff5c', '#c38bff', '#ff9d3a', '#ff3d8b', '#ffffff'];
 
   // ---------- storage ----------
   function loadSites() {
@@ -71,7 +135,7 @@
       var a = el('a', 'tile tile-big');
       a.href = t.url;
       a.setAttribute('data-nav', '');
-      a.style.background = t.bg;
+      a.style.setProperty('--accent', t.accent);
       a.innerHTML = '<div class="tile-icon">' + t.icon + '</div>' +
         '<div class="tile-name">' + text(t.name) + '</div><div class="tile-sub">' + text(t.sub) + '</div>';
       main.appendChild(a);
@@ -85,7 +149,8 @@
       a.setAttribute('data-nav', '');
       var host = '';
       try { host = new URL(s.url).hostname.replace(/^www\./, ''); } catch (e) {}
-      a.innerHTML = '<div class="tile-letter" style="background:' + COLORS[i % COLORS.length] + '">' +
+      a.style.setProperty('--accent', COLORS[i % COLORS.length]);
+      a.innerHTML = '<div class="tile-letter">' +
         text((s.name || host || '?').charAt(0).toUpperCase()) + '</div>' +
         '<div class="tile-name">' + text(s.name || host) + '</div><div class="tile-sub">' + text(host) + '</div>';
       row.appendChild(a);
@@ -215,7 +280,7 @@
     var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
     var best = pick(items, cur, r, cx, cy, dir, true) ||
       (dir === 'up' || dir === 'down' ? pick(items, cur, r, cx, cy, dir, false) : null);
-    if (best) best.focus();
+    if (best) { best.focus(); sound('move'); }
   }
   // strict: only the same row/column or a 45-degree cone. Not strict: anything in that direction.
   function pick(items, cur, r, cx, cy, dir, strict) {
@@ -267,7 +332,45 @@
     if (t && t !== document.activeElement && t.tagName !== 'INPUT') t.focus({ preventScroll: true });
   });
 
+  // ---------- menu sounds (little chiptune blips) ----------
+  var audio = null;
+  function sound(kind) {
+    try {
+      if (!audio) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        audio = new AC();
+      }
+      if (audio.state === 'suspended') audio.resume();
+      var t = audio.currentTime, o = audio.createOscillator(), g = audio.createGain();
+      o.type = 'square';
+      if (kind === 'move') {
+        o.frequency.setValueAtTime(880, t);
+      } else {
+        o.frequency.setValueAtTime(660, t);
+        o.frequency.setValueAtTime(990, t + 0.06);
+      }
+      var len = kind === 'move' ? 0.05 : 0.16;
+      g.gain.setValueAtTime(0.04, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      o.connect(g);
+      g.connect(audio.destination);
+      o.start(t);
+      o.stop(t + len + 0.02);
+    } catch (e) {}
+  }
+  // Opening a tile: play the "select" blip, then go.
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a.tile');
+    if (!a || e.defaultPrevented) return;
+    e.preventDefault();
+    sound('select');
+    setTimeout(function () { location.href = a.href; }, 140);
+  });
+
   // ---------- go ----------
+  document.getElementById('brand-icon').innerHTML = pixelSvg(ICONS.tv, '#ff3d8b', '#ffd23f');
+  document.getElementById('shield-icon').innerHTML = pixelSvg(ICONS.shield, '#5dff8a');
   render();
   renderHints();
   tick();

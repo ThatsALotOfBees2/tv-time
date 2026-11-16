@@ -14,28 +14,50 @@ Two versions share the same start page and blocking code:
 
 ![TV Time start page](docs/start-page.png)
 
-Big tiles for Streamex and YouTube, a clock, and **Your sites**: pick *Add / edit sites* to add
-any other website as a tile (or remove one). Move around with the arrow keys, OK opens a tile.
-Source: `web/start/`.
+A retro pixel-art home screen: a stage with a striped back wall, a checkered floor, twinkling
+stars and chasing bulbs around the edge, with menu-window tiles for Streamex and YouTube, a clock
+and **Your sites** (*Add / edit sites* adds any other website as a tile, or removes one). Move
+around with the arrow keys; a blinking pointer marks the selected tile, with a little chiptune
+blip on each move and on opening a tile. Source: `web/start/`. The pixel font is Press Start 2P
+(SIL Open Font License, `web/start/fonts/`).
 
 ### Startup intro
 
-When the app or the Pi starts, a ~5 second intro plays before the start page: an old TV
-switching on, static, a test card with its beep, then a game-show title card - **"IT'S TV TIME!"**
-on a marquee sign with chasing lights, spotlights, confetti, a brass fanfare and applause. All
-the sound is generated in code (`web/start/intro.js`). Any button skips it. It plays once per
-start-up, and *Add / edit sites* has an on/off switch and a *Play it now* button.
+When the app or the Pi starts, a retro pixel-art intro plays before the start page (about 7
+seconds, any button skips it):
 
-**The "It's TV time!" voice line:** `web/start/intro-sound.mp3` is played instead of the fanfare
-when it's there. The sign pops in word by word in time with it ("IT'S" / "T" / "V" / "TIME!"),
-then confetti, a cymbal and applause. The moment of each word is set in
-`web/start/intro-sound-timing.js` (in seconds); without that file the timing is estimated from
-the clip's length. To use a different clip, replace the mp3 (`.ogg`, `.wav`, `.m4a` also work),
-adjust or delete the timing file, then:
+1. an old TV switches on, static, a "CH 03" channel number
+2. a flash, then a pixel stage with sweeping spotlights, stars, chasing bulbs and a checkered floor
+3. **"IT'S TV TIME!"** drops in letter by letter, in time with the voice line - every letter lands
+   with a *bwip* and a screen shake
+4. the "!" sets off a white flash, a star burst and a chiptune fanfare
+5. a dialogue box types out "NOW SHOWING ON YOUR TV!" with text blips, then a pixel circle opens
+   onto the start page
+
+It plays once per start-up; *Add / edit sites* has an on/off switch and a *Play it now* button.
+Everything is drawn on one 180-pixel-high canvas (`web/start/intro.js`).
+
+**Voice line:** `web/start/intro-sound.mp3` (`.ogg`, `.wav`, `.m4a` also work). The moment of each
+word is set in `web/start/intro-sound-timing.js` (in seconds); without that file it's estimated
+from the clip's length. Without any clip, an 8-bit fanfare plays instead.
+
+**Sound effects:** all chiptune, generated in code. Any of them can be replaced by your own file in
+`web/start/sfx/` (`.mp3`, `.ogg` or `.wav`):
+
+| File name | When it plays |
+|---|---|
+| `power` | the TV switching on |
+| `channel` | the "CH 03" channel number appearing |
+| `land` | each letter landing |
+| `bang` | the "!" (flash and star burst) |
+| `sparkle` | stars twinkling afterwards |
+| `blip` | each letter typed in the dialogue box |
+| `cheer` | the crowd after the voice line |
+| `jingle` | the fanfare, only when there is no voice line |
+
+After changing sounds or the clip:
 * Raspberry Pi: `python3 pi/build-extension.py` (or `./pi/install.sh` again) and restart.
 * Android: commit and let GitHub build a new APK.
-
-Without any clip, the intro uses its own synthesised drum roll, fanfare and applause.
 
 ## Get the APK
 
