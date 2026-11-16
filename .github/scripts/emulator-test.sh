@@ -14,7 +14,7 @@ adb shell settings put system accelerometer_rotation 0
 adb shell settings put system user_rotation 1
 adb shell wm user-rotation lock 1 >/dev/null 2>&1 || true
 
-adb install -r out/tv-time.apk
+adb install -r out/tv-time-x86_64.apk
 adb logcat -c
 adb shell am start -W -n "$PKG/.MainActivity"
 

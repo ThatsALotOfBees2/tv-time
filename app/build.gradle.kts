@@ -50,10 +50,14 @@ android {
         }
     }
 
-    // The start page and the YouTube ad remover are shared with the Raspberry Pi version.
-    sourceSets {
-        getByName("main") {
-            assets.srcDirs("src/main/assets", "../web")
+    // GeckoView carries a whole browser engine per CPU type, so build one APK per type
+    // (app-<abi>-release.apk) instead of one huge APK. The updater picks the right one.
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a", "x86_64")
+            isUniversalApk = false
         }
     }
 
@@ -71,5 +75,16 @@ android {
 }
 
 dependencies {
-    implementation("androidx.webkit:webkit:1.12.1")
+    // Firefox's engine, with uBlock Origin built in (see tools/fetch-ublock.sh).
+    implementation("org.mozilla.geckoview:geckoview:${property("geckoviewVersion")}")
 }
+
+// uBlock Origin is downloaded at build time into src/main/assets/ublock (not kept in git).
+val checkUblock by tasks.registering {
+    doLast {
+        if (!file("src/main/assets/ublock/manifest.json").exists()) {
+            throw GradleException("uBlock Origin is missing: run tools/fetch-ublock.sh first")
+        }
+    }
+}
+tasks.named("preBuild") { dependsOn(checkUblock) }
