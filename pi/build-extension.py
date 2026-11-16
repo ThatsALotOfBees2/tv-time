@@ -84,7 +84,9 @@ def main() -> None:
         shutil.rmtree(start_dst)
     start_dst.mkdir(parents=True)
     for f in sorted(start_src.iterdir()):
-        if f.suffix == ".js":
+        if f.is_dir():
+            shutil.copytree(f, start_dst / f.name)
+        elif f.suffix == ".js":
             copy_js(f, start_dst / f.name)
         else:
             shutil.copy2(f, start_dst / f.name)
