@@ -77,19 +77,35 @@ def build_rules(hosts: list[str]) -> list[dict]:
     return rules
 
 
-def main() -> None:
-    start_src = ROOT / "web" / "start"
-    start_dst = EXT / "start"
-    if start_dst.exists():
-        shutil.rmtree(start_dst)
-    start_dst.mkdir(parents=True)
-    for f in sorted(start_src.iterdir()):
+def copy_start_page(dst: pathlib.Path) -> None:
+    src = ROOT / "web" / "start"
+    if dst.exists():
+        shutil.rmtree(dst)
+    dst.mkdir(parents=True)
+    for f in sorted(src.iterdir()):
         if f.is_dir():
-            shutil.copytree(f, start_dst / f.name)
+            shutil.copytree(f, dst / f.name)
         elif f.suffix == ".js":
-            copy_js(f, start_dst / f.name)
+            copy_js(f, dst / f.name)
         else:
-            shutil.copy2(f, start_dst / f.name)
+            shutil.copy2(f, dst / f.name)
+
+
+def build_gecko_helper() -> None:
+    """The Android app's built-in GeckoView extension: start page + page helpers."""
+    out = ROOT / "app" / "src" / "main" / "assets" / "tvtime"
+    if out.exists():
+        shutil.rmtree(out)
+    out.mkdir(parents=True)
+    shutil.copy2(ROOT / "web" / "gecko" / "manifest.json", out / "manifest.json")
+    copy_js(ROOT / "web" / "gecko" / "bridge.js", out / "bridge.js")
+    copy_js(ROOT / "app" / "src" / "main" / "assets" / "inject.js", out / "inject.js")
+    copy_start_page(out / "start")
+    print(f"Built {out.relative_to(ROOT)} (Android GeckoView helper extension)")
+
+
+def main() -> None:
+    copy_start_page(EXT / "start")
 
     copy_js(ROOT / "web" / "shield" / "youtube.js", EXT / "youtube.js")
     copy_js(ROOT / "app" / "src" / "main" / "assets" / "inject.js", EXT / "shield.js")
@@ -99,6 +115,8 @@ def main() -> None:
     (EXT / "rules" / "ads.json").write_text(json.dumps(build_rules(hosts), indent=1) + "\n", encoding="utf-8")
 
     shutil.copyfile(ROOT / "app" / "src" / "main" / "res" / "mipmap-xxxhdpi" / "ic_launcher.png", EXT / "icon.png")
+
+    build_gecko_helper()
     print(f"Built {EXT.relative_to(ROOT)} ({len(hosts)} blocked domains, {len(URL_FILTERS)} URL filters)")
 
 

@@ -22,13 +22,17 @@ shot u2-downloaded 6
 adb shell input keyevent DPAD_CENTER          # "Press OK to install"
 shot u3-installer 5
 
-# Press the confirm button on Android's "update this app?" screen.
-for attempt in 1 2 3; do
+# Press the confirm button on Android's "update this app?" screen (it can take a while to
+# appear with a big APK), retrying until the new version is installed.
+for attempt in $(seq 1 12); do
+  [ "$(version)" = "versionCode=2" ] && break
   adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
   adb pull /sdcard/ui.xml "$OUT/ui-$attempt.xml" >/dev/null 2>&1
   XY=$(python3 - "$OUT/ui-$attempt.xml" <<'PY'
 import re, sys
 xml = open(sys.argv[1], encoding='utf-8', errors='replace').read()
+if 'com.google.android.packageinstaller' not in xml and 'com.android.packageinstaller' not in xml:
+    sys.exit(0)
 for node in re.findall(r'<node [^>]*>', xml):
     text = re.search(r'text="([^"]*)"', node)
     if text and text.group(1).strip().lower() in ('update', 'install', 'ok'):
@@ -38,13 +42,14 @@ for node in re.findall(r'<node [^>]*>', xml):
 PY
 )
   if [ -n "$XY" ]; then
-    echo "tapping installer button at $XY"
+    echo "attempt $attempt: tapping installer button at $XY"
     adb shell input tap $XY
-    break
+    sleep 8
+  else
+    sleep 4
   fi
-  sleep 3
 done
-shot u4-after-confirm 10
+shot u4-after-confirm 2
 
 NOW=$(version)
 echo "after update: $NOW"

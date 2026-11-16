@@ -21,28 +21,42 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      - name: Download uBlock Origin (built into the app)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash tools/fetch-ublock.sh
+
       - name: Build
         run: |
           # The Android SDK is preinstalled on GitHub's Ubuntu runners (ANDROID_HOME).
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease
+          ./gradlew --no-daemon -q :app:dependencies --configuration releaseRuntimeClasspath | grep -m1 "geckoview" || true
           mkdir -p out
-          cp app/build/outputs/apk/release/app-release.apk out/tv-time.apk
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            cp "app/build/outputs/apk/release/app-$abi-release.apk" "out/tv-time-$abi.apk"
+          done
+          # tv-time.apk = the 32-bit ARM build, which installs on practically every TV box.
+          cp out/tv-time-armeabi-v7a.apk out/tv-time.apk
+          ls -la out
 
-      - name: Upload APK (download from the run's Summary page)
+      - name: Upload APKs (download from the run's Summary page)
         uses: actions/upload-artifact@v4
         with:
           name: tv-time-apk
-          path: out/tv-time.apk
+          path: out/*.apk
 
       # On the main branch, also publish a release. It carries the APK and version.json, which the
       # app checks on every start-up to update itself. The newest release is always reachable at
       # https://github.com/<owner>/<repo>/releases/latest/download/tv-time.apk (or version.json).
       - name: Write version.json for the in-app updater
         run: |
+          BASE="https://github.com/${{ github.repository }}/releases/download/build-${{ github.run_number }}"
           cat > out/version.json <<EOF
-          {"versionCode": ${{ github.run_number }}, "versionName": "1.0.${{ github.run_number }}", "apk": "https://github.com/${{ github.repository }}/releases/download/build-${{ github.run_number }}/tv-time.apk"}
+          {"versionCode": ${{ github.run_number }}, "versionName": "1.0.${{ github.run_number }}",
+           "apk": "$BASE/tv-time.apk",
+           "apks": {"arm64-v8a": "$BASE/tv-time-arm64-v8a.apk", "armeabi-v7a": "$BASE/tv-time-armeabi-v7a.apk", "x86_64": "$BASE/tv-time-x86_64.apk"}}
           EOF
           cat out/version.json
 
@@ -55,6 +69,9 @@ jobs:
           body: "Automatic build of ${{ github.sha }}. Install tv-time.apk on your Android TV / phone; installed copies update themselves."
           files: |
             out/tv-time.apk
+            out/tv-time-arm64-v8a.apk
+            out/tv-time-armeabi-v7a.apk
+            out/tv-time-x86_64.apk
             out/version.json
           make_latest: true
 
@@ -67,10 +84,10 @@ jobs:
       - name: Extension is up to date with the shared sources
         run: |
           python3 pi/build-extension.py
-          git diff --exit-code -- pi/extension || (echo "::error::Run 'python3 pi/build-extension.py' and commit the result" && exit 1)
+          git diff --exit-code -- pi/extension app/src/main/assets/tvtime || (echo "::error::Run 'python3 pi/build-extension.py' and commit the result" && exit 1)
       - name: Syntax checks
         run: |
-          for f in web/start/start.js web/shield/youtube.js pi/extension/*.js app/src/main/assets/inject.js; do node --check "$f"; done
+          for f in web/start/start.js web/shield/youtube.js web/gecko/bridge.js pi/extension/*.js app/src/main/assets/inject.js; do node --check "$f"; done
           python3 -m py_compile pi/tvremote.py pi/build-extension.py
           bash -n pi/install.sh pi/launch.sh pi/cec-setup.sh
           python3 -c "import json; json.load(open('pi/extension/manifest.json')); json.load(open('pi/extension/rules/ads.json'))"
@@ -147,6 +164,10 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
+      - name: Download uBlock Origin (built into the app)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash tools/fetch-ublock.sh
       - name: Build version 1 and version 2, and serve version 2 as an update
         run: |
           echo "sdk.dir=$ANDROID_HOME" > local.properties
@@ -154,10 +175,10 @@ jobs:
           mkdir -p upd
           URL=http://10.0.2.2:8765/version.json
           ./gradlew --no-daemon assembleRelease -PversionCodeOverride=1 -PupdateUrl=$URL
-          cp app/build/outputs/apk/release/app-release.apk upd/old.apk
+          cp app/build/outputs/apk/release/app-x86_64-release.apk upd/old.apk
           ./gradlew --no-daemon assembleRelease -PversionCodeOverride=2 -PupdateUrl=$URL
-          cp app/build/outputs/apk/release/app-release.apk upd/new.apk
-          echo '{"versionCode": 2, "versionName": "test-2", "apk": "http://10.0.2.2:8765/new.apk"}' > upd/version.json
+          cp app/build/outputs/apk/release/app-x86_64-release.apk upd/new.apk
+          echo '{"versionCode": 2, "versionName": "test-2", "apk": "http://10.0.2.2:8765/none.apk", "apks": {"x86_64": "http://10.0.2.2:8765/new.apk"}}' > upd/version.json
           nohup python3 -m http.server 8765 --directory upd > server.log 2>&1 &
           sleep 1 && curl -sf http://127.0.0.1:8765/version.json
       - name: Enable KVM (hardware acceleration for the emulator)

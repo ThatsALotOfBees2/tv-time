@@ -5,21 +5,14 @@
     android:layout_height="match_parent"
     android:background="@color/bg">
 
-    <!-- The website -->
-    <WebView
-        android:id="@+id/webview"
+    <!-- The website: Firefox's engine (GeckoView) with uBlock Origin built in.
+         Fullscreen video also plays inside this view. -->
+    <org.mozilla.geckoview.GeckoView
+        android:id="@+id/gecko"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:focusable="true"
         android:focusableInTouchMode="true" />
-
-    <!-- Holds the video player when a site goes fullscreen -->
-    <FrameLayout
-        android:id="@+id/fullscreen"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#FF000000"
-        android:visibility="gone" />
 
     <ProgressBar
         android:id="@+id/progress"

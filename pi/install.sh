@@ -21,9 +21,20 @@ fi
 
 echo "==> Installing packages"
 sudo apt-get update
-CHROMIUM_PKG=chromium
-apt-cache show chromium >/dev/null 2>&1 || CHROMIUM_PKG=chromium-browser
-if ! command -v chromium >/dev/null 2>&1 && ! command -v chromium-browser >/dev/null 2>&1; then
+# Brave browser: its Shields block ads, trackers and pop-ups (64-bit Raspberry Pi OS only).
+if [ "$(dpkg --print-architecture)" = "arm64" ] && ! command -v brave-browser >/dev/null 2>&1; then
+  sudo apt-get install -y curl gnupg
+  sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg \
+    https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+  echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" \
+    | sudo tee /etc/apt/sources.list.d/brave-browser-release.list >/dev/null
+  sudo apt-get update
+  sudo apt-get install -y brave-browser || echo "Brave could not be installed; using Chromium instead."
+fi
+# Chromium as the fallback (32-bit Pi OS, or if Brave failed).
+if ! command -v brave-browser >/dev/null 2>&1 && ! command -v chromium >/dev/null 2>&1 && ! command -v chromium-browser >/dev/null 2>&1; then
+  CHROMIUM_PKG=chromium
+  apt-cache show chromium >/dev/null 2>&1 || CHROMIUM_PKG=chromium-browser
   sudo apt-get install -y "$CHROMIUM_PKG"
 fi
 sudo apt-get install -y python3-evdev v4l-utils
@@ -71,6 +82,6 @@ sudo systemctl enable --now tvtime-remote.service
 echo
 echo "Done! Reboot to start TV Time:  sudo reboot"
 echo "  Remote service log:  journalctl -u tvtime-remote -f"
-echo "  Stop the TV screen:  touch ~/.config/tv-time-browser/STOP && pkill -f chromium"
+echo "  Stop the TV screen:  touch ~/.config/tv-time-browser/STOP && pkill -f \"brave|chromium\""
 echo "  Start it again:      $DIR/launch.sh &"
 echo "  Installed for user:  $ME"
