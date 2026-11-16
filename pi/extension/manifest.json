@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "TV Time Shield",
+  "version": "1.0.0",
+  "description": "TV Time for Raspberry Pi: start page, ad blocker (incl. YouTube), pop-up and redirect blocker, remote-control shortcuts.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvOIOtEYU0NOaREbQRihM+fDFYybqoAVKd0vArEoBJ0tASSbzVqzHMIwBdlZvATtESZmteLH1e2nWddo1ZQKosYdcPGzafUeodZoZfilS5eZuCiDEut8ho8Mqe9v/C2M2vgdpoggSH2RV4B1OgOoIqMxR6iO2N6g6nZqL+6BywgaqQPV6CwObYifvUi9OhV6Ot/PsxE/aKAZndHGDVYXJtYMdV2Rv2UGEs8v3id/Aw8rFEiC6AJ5emccK1VNxEJ1g8da9r26OXKSyzuW0DXZST6nK9zdrrDzdI+L87fO1tUVdkfc/sC/t3RFMGBH77mFSWVF+/38AYOkEj6Ws6iAcaQIDAQAB",
+  "icons": { "128": "icon.png" },
+  "permissions": ["declarativeNetRequest", "storage", "tabs", "scripting", "alarms"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js" },
+  "declarative_net_request": {
+    "rule_resources": [{ "id": "ads", "enabled": true, "path": "rules/ads.json" }]
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["shield.js", "youtube.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true,
+      "world": "MAIN"
+    }
+  ],
+  "web_accessible_resources": [
+    { "resources": ["blocked.html", "blocked.js"], "matches": ["<all_urls>"] }
+  ],
+  "commands": {
+    "go-home": {
+      "suggested_key": { "default": "Alt+Shift+H" },
+      "description": "Open the TV Time start page"
+    },
+    "go-back": {
+      "suggested_key": { "default": "Alt+Shift+B" },
+      "description": "Leave fullscreen, or go back a page"
+    }
+  }
+}

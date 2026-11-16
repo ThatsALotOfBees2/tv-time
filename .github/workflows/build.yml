@@ -1,0 +1,196 @@
+name: Build APK
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build
+        run: |
+          # The Android SDK is preinstalled on GitHub's Ubuntu runners (ANDROID_HOME).
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease
+          mkdir -p out
+          cp app/build/outputs/apk/release/app-release.apk out/tv-time.apk
+
+      - name: Upload APK (download from the run's Summary page)
+        uses: actions/upload-artifact@v4
+        with:
+          name: tv-time-apk
+          path: out/tv-time.apk
+
+      # On the main branch, also publish a release. It carries the APK and version.json, which the
+      # app checks on every start-up to update itself. The newest release is always reachable at
+      # https://github.com/<owner>/<repo>/releases/latest/download/tv-time.apk (or version.json).
+      - name: Write version.json for the in-app updater
+        run: |
+          cat > out/version.json <<EOF
+          {"versionCode": ${{ github.run_number }}, "versionName": "1.0.${{ github.run_number }}", "apk": "https://github.com/${{ github.repository }}/releases/download/build-${{ github.run_number }}/tv-time.apk"}
+          EOF
+          cat out/version.json
+
+      - name: Publish release
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: TV Time 1.0.${{ github.run_number }}
+          body: "Automatic build of ${{ github.sha }}. Install tv-time.apk on your Android TV / phone; installed copies update themselves."
+          files: |
+            out/tv-time.apk
+            out/version.json
+          make_latest: true
+
+  pi:
+    # Checks the Raspberry Pi parts: the extension must be rebuilt from the shared sources
+    # (python3 pi/build-extension.py) whenever web/ or the Android assets change.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extension is up to date with the shared sources
+        run: |
+          python3 pi/build-extension.py
+          git diff --exit-code -- pi/extension || (echo "::error::Run 'python3 pi/build-extension.py' and commit the result" && exit 1)
+      - name: Syntax checks
+        run: |
+          for f in web/start/start.js web/shield/youtube.js pi/extension/*.js app/src/main/assets/inject.js; do node --check "$f"; done
+          python3 -m py_compile pi/tvremote.py pi/build-extension.py
+          bash -n pi/install.sh pi/launch.sh pi/cec-setup.sh
+          python3 -c "import json; json.load(open('pi/extension/manifest.json')); json.load(open('pi/extension/rules/ads.json'))"
+      - name: Package the Pi extension
+        run: cd pi && zip -qr ../tv-time-pi-extension.zip extension
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tv-time-pi-extension
+          path: tv-time-pi-extension.zip
+
+  emulator-test:
+    # Installs the APK on Android emulators (an older and a current Android version) and drives it
+    # with remote-control keys only, taking a screenshot after every step
+    # (download "emulator-test-results-api<N>" from the run).
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [30, 34]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: tv-time-apk
+          path: out
+      - name: Enable KVM (hardware acceleration for the emulator)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run the app like a TV remote would
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          # Plain Android without Google services: on slow CI machines Google Play services
+          # sometimes freezes, and Android then kills apps that use its font provider.
+          target: default
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash .github/scripts/emulator-test.sh
+      - name: Upload screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emulator-test-results-api${{ matrix.api }}
+          path: test-out
+      - name: Print small copies of the screenshots (base64 JPEG, for reviewing from the log)
+        if: always()
+        run: |
+          pip install -q pillow
+          python3 - <<'PY'
+          import base64, glob, io
+          from PIL import Image
+          for f in sorted(glob.glob('test-out/*.png')):
+              im = Image.open(f).convert('RGB')
+              im.thumbnail((480, 480))
+              buf = io.BytesIO()
+              im.save(buf, 'JPEG', quality=60)
+              print('SHOT', f.split('/')[-1], base64.b64encode(buf.getvalue()).decode())
+          PY
+
+  update-test:
+    # End-to-end test of the self-updater on an emulator: version 1 of the app finds version 2 on
+    # a local server, downloads and installs it. Download "update-test-results" for screenshots.
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build version 1 and version 2, and serve version 2 as an update
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          chmod +x gradlew
+          mkdir -p upd
+          URL=http://10.0.2.2:8765/version.json
+          ./gradlew --no-daemon assembleRelease -PversionCodeOverride=1 -PupdateUrl=$URL
+          cp app/build/outputs/apk/release/app-release.apk upd/old.apk
+          ./gradlew --no-daemon assembleRelease -PversionCodeOverride=2 -PupdateUrl=$URL
+          cp app/build/outputs/apk/release/app-release.apk upd/new.apk
+          echo '{"versionCode": 2, "versionName": "test-2", "apk": "http://10.0.2.2:8765/new.apk"}' > upd/version.json
+          nohup python3 -m http.server 8765 --directory upd > server.log 2>&1 &
+          sleep 1 && curl -sf http://127.0.0.1:8765/version.json
+      - name: Enable KVM (hardware acceleration for the emulator)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run the update
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash .github/scripts/update-test.sh
+      - name: Upload screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: update-test-results
+          path: test-out
+      - name: Print small copies of the screenshots (base64 JPEG, for reviewing from the log)
+        if: always()
+        run: |
+          pip install -q pillow
+          python3 - <<'PY'
+          import base64, glob, io
+          from PIL import Image
+          for f in sorted(glob.glob('test-out/*.png')):
+              im = Image.open(f).convert('RGB')
+              im.thumbnail((480, 480))
+              buf = io.BytesIO()
+              im.save(buf, 'JPEG', quality=60)
+              print('SHOT', f.split('/')[-1], base64.b64encode(buf.getvalue()).decode())
+          PY

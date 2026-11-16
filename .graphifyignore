@@ -1,0 +1,16 @@
+# Generated copies (pi/build-extension.py builds these from web/ and the Android assets)
+pi/extension/start/
+pi/extension/shield.js
+pi/extension/youtube.js
+pi/extension/rules/
+pi/extension/icon.png
+# Same launcher icon at other sizes (xxxhdpi is kept)
+app/src/main/res/mipmap-mdpi/
+app/src/main/res/mipmap-hdpi/
+app/src/main/res/mipmap-xhdpi/
+app/src/main/res/mipmap-xxhdpi/
+# Audio clip, font licence, Gradle wrapper script
+*.mp3
+web/start/fonts/
+gradlew
+gradlew.bat
