@@ -1,7 +1,10 @@
 /* TV Time startup intro: everything is drawn on one low-resolution canvas (see intro.js). */
 .intro {
   position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 100;
   cursor: pointer;
 }

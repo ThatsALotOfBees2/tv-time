@@ -132,8 +132,11 @@ Make this page my Home, Clear cookies & cache, Exit.
    removed. YouTube changes this regularly, so an occasional ad may slip through until the
    script is updated.
 
-Steps 2 and 4 run inside cross-origin video-player iframes too (needs a reasonably recent
-Android System WebView; update it from the Play Store if a player misbehaves).
+Steps 2 and 4 run inside cross-origin video-player iframes too.
+
+**Keep Android System WebView up to date** (Play Store > Android System WebView). TV Time uses it
+to show websites, and many TV boxes ship an old one: Streamex doesn't load at all on WebView 83
+(tested on an Android 11 emulator). The app warns on start-up when the WebView is older than 100.
 
 ## Changing the home screen
 

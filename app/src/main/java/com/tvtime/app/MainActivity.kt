@@ -120,6 +120,7 @@ class MainActivity : Activity() {
         webView.requestFocus()
         cursor.post { cursor.showCursor() }
         osd(getString(R.string.app_name) + "  -  hold OK for menu", 3500)
+        warnIfOldWebView()
         checkForUpdate()
     }
 
@@ -134,6 +135,20 @@ class MainActivity : Activity() {
         if (!webViewDead) webView.onPause()
         if (updateState == UpdateState.INSTALLING) installerShown = true
         super.onPause()
+    }
+
+    /** Many TV boxes ship an old Android System WebView that can't run newer sites (like Streamex). */
+    private fun warnIfOldWebView() {
+        val major = try {
+            WebViewCompat.getCurrentWebViewPackage(this)?.versionName?.substringBefore('.')?.toIntOrNull()
+        } catch (e: Exception) {
+            null
+        } ?: return
+        if (major < MIN_GOOD_WEBVIEW) {
+            handler.postDelayed({
+                osd("Android System WebView $major is too old for some sites - update it in the Play Store", 9000)
+            }, 9000)
+        }
     }
 
     // ---------- self-update ----------
@@ -635,6 +650,10 @@ class MainActivity : Activity() {
                 longPressFired = false
                 handler.removeCallbacks(longPressRunnable)
                 handler.postDelayed(longPressRunnable, 650)
+            } else if (event.isLongPress && !longPressFired && longPressKey == event.keyCode) {
+                // Android itself says this is a long press: open the menu now.
+                handler.removeCallbacks(longPressRunnable)
+                longPressRunnable.run()
             }
             KeyEvent.ACTION_UP -> {
                 handler.removeCallbacks(longPressRunnable)
@@ -950,6 +969,7 @@ class MainActivity : Activity() {
 
     companion object {
         private const val START_PAGE = "file:///android_asset/start/index.html"
+        private const val MIN_GOOD_WEBVIEW = 100
         private const val START_PAGE_PREFIX = "file:///android_asset/start/"
         private val DEFAULT_SITES = listOf("streamex", "youtube", "youtu", "youtube-nocookie", "google")
         private const val PREF_HOME = "home_url"

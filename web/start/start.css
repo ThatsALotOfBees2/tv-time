@@ -59,7 +59,10 @@ header, main, footer { position: relative; z-index: 2; }
 /* ---------- the stage behind everything ---------- */
 .stage-bg {
   position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 0;
   pointer-events: none;
   background: repeating-linear-gradient(90deg, var(--wall2) 0 calc(var(--u) * 2.4), var(--wall1) calc(var(--u) * 2.4) calc(var(--u) * 4.8));
@@ -97,7 +100,10 @@ header, main, footer { position: relative; z-index: 2; }
 /* chasing bulbs around the edge of the screen */
 .bulbs {
   position: fixed;
-  inset: calc(var(--u) * .8);
+  top: calc(var(--u) * .8);
+  right: calc(var(--u) * .8);
+  bottom: calc(var(--u) * .8);
+  left: calc(var(--u) * .8);
   z-index: 1;
   pointer-events: none;
   --d: max(5px, calc(var(--u) * .6));
@@ -133,12 +139,12 @@ header, main, footer { position: relative; z-index: 2; }
 .brand {
   display: flex;
   align-items: center;
-  gap: calc(var(--u) * 1.4);
   font-size: calc(var(--u) * 2.2);
   letter-spacing: .05em;
   color: var(--gold);
   text-shadow: calc(var(--u) * .3) calc(var(--u) * .3) 0 #000;
 }
+.brand > * + * { margin-left: calc(var(--u) * 1.4); }
 .brand-icon { width: calc(var(--u) * 4.2); height: calc(var(--u) * 3.6); }
 .clock { text-align: right; }
 .time {
@@ -168,7 +174,8 @@ main { flex: 1; display: flex; flex-direction: column; justify-content: center; 
   text-shadow: calc(var(--u) * .25) calc(var(--u) * .25) 0 #000;
 }
 
-.row { display: flex; flex-wrap: wrap; gap: calc(var(--u) * 3); padding-left: calc(var(--u) * 3); }
+.row { display: flex; flex-wrap: wrap; padding-left: calc(var(--u) * 3); margin-bottom: calc(var(--u) * -3); }
+.row > * { margin: 0 calc(var(--u) * 3) calc(var(--u) * 3) 0; }
 
 /* a tile is a menu window: black, hard white border, hard drop shadow, colour bar on top */
 .tile {
@@ -280,14 +287,16 @@ main { flex: 1; display: flex; flex-direction: column; justify-content: center; 
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: calc(var(--u) * 2);
   font-size: calc(var(--u) * .85);
   color: var(--text);
   text-shadow: calc(var(--u) * .2) calc(var(--u) * .2) 0 #000;
 }
-.shield { display: flex; align-items: center; gap: calc(var(--u) * .8); color: var(--ok); }
+.bottom > * + * { margin-left: calc(var(--u) * 2); }
+.shield { display: flex; align-items: center; color: var(--ok); }
+.shield-icon { margin-right: calc(var(--u) * .8); }
 .shield-icon { width: calc(var(--u) * 1.8); height: calc(var(--u) * 2); }
-.hints { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: calc(var(--u) * 1) calc(var(--u) * 2.4); }
+.hints { display: flex; flex-wrap: wrap; justify-content: flex-end; }
+.hints > span { margin: calc(var(--u) * .5) 0 calc(var(--u) * .5) calc(var(--u) * 2.4); }
 .hints kbd {
   font-family: inherit;
   color: #000;
@@ -302,7 +311,10 @@ main { flex: 1; display: flex; flex-direction: column; justify-content: center; 
 .dialog[hidden] { display: none; }
 .dialog {
   position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 10;
   background: rgba(8, 2, 20, .78);
   display: grid;
@@ -335,7 +347,8 @@ main { flex: 1; display: flex; flex-direction: column; justify-content: center; 
 }
 .dialog-box input:focus { border-color: var(--gold); }
 .error { color: var(--pink); margin: 0 0 calc(var(--u) * 1.2); }
-.dialog-actions { display: flex; flex-wrap: wrap; gap: calc(var(--u) * 1.6); }
+.dialog-actions { display: flex; flex-wrap: wrap; }
+.dialog-actions > * { margin: 0 calc(var(--u) * 1.6) calc(var(--u) * 1.6) 0; }
 .btn {
   position: relative;
   font: inherit;
@@ -362,10 +375,10 @@ main { flex: 1; display: flex; flex-direction: column; justify-content: center; 
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: calc(var(--u) * 1);
   padding: calc(var(--u) * .8) 0;
   border-top: max(2px, calc(var(--u) * .2)) dashed #3a2a5c;
 }
+.manage-row > * + * { margin-left: calc(var(--u) * 1); }
 .manage-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .manage-row .btn { padding: calc(var(--u) * .6) calc(var(--u) * 1.4); }
 

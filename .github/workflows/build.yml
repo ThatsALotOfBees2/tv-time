@@ -107,7 +107,9 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api }}
-          target: google_apis
+          # Plain Android without Google services: on slow CI machines Google Play services
+          # sometimes freezes, and Android then kills apps that use its font provider.
+          target: default
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
