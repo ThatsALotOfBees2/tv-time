@@ -18,6 +18,21 @@ Big tiles for Streamex and YouTube, a clock, and **Your sites**: pick *Add / edi
 any other website as a tile (or remove one). Move around with the arrow keys, OK opens a tile.
 Source: `web/start/`.
 
+### Startup intro
+
+When the app or the Pi starts, a ~5 second intro plays before the start page: an old TV
+switching on, static, a test card with its beep, then a game-show title card - **"IT'S TV TIME!"**
+on a marquee sign with chasing lights, spotlights, confetti, a brass fanfare and applause. All
+the sound is generated in code (`web/start/intro.js`). Any button skips it. It plays once per
+start-up, and *Add / edit sites* has an on/off switch and a *Play it now* button.
+
+**Your own sound:** put a clip named `intro-sound.mp3` (or `.ogg`, `.wav`, `.m4a`) in `web/start/`
+and it plays instead of the fanfare; the title card stays up for as long as the clip runs
+(up to 9 seconds). Then:
+* Raspberry Pi: run `python3 pi/build-extension.py` (or `./pi/install.sh` again) and restart.
+* Android: commit the file and let GitHub build a new APK. Keep in mind that a clip taken from a
+  game, show or song belongs to its owner, so only commit it to a private repository.
+
 ## Get the APK
 
 Every push is built automatically by GitHub Actions (`.github/workflows/build.yml`):

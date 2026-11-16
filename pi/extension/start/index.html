@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TV Time</title>
   <link rel="stylesheet" href="start.css">
+  <link rel="stylesheet" href="intro.css">
 </head>
 <body>
   <div class="glow glow-a"></div>
@@ -58,9 +59,17 @@
         <button id="f-cancel" data-nav class="btn" type="button">Cancel</button>
       </div>
       <div id="manage" class="manage"></div>
+      <div class="manage">
+        <h3>Startup intro</h3>
+        <div class="dialog-actions">
+          <button id="intro-toggle" data-nav class="btn" type="button">Intro: on</button>
+          <button id="intro-play" data-nav class="btn" type="button">Play it now</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <script src="start.js"></script>
+  <script src="intro.js"></script>
 </body>
 </html>

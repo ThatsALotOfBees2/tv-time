@@ -1,0 +1,183 @@
+/* TV Time startup intro: switch-on, static, test card, then the "IT'S TV TIME!" title card. */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #000;
+  overflow: hidden;
+  cursor: pointer;
+  --u: min(1vw, 1.78vh);
+}
+.intro canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.intro .layer { position: absolute; inset: 0; opacity: 0; }
+.intro .on { opacity: 1; }
+
+/* 1. CRT switch-on: a dot stretches into a line, then the line opens into a picture */
+.intro .crt-line {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  box-shadow: 0 0 calc(var(--u) * 4) #bfe3ff;
+  transform: translate(-50%, -50%) scale(0, 0.004);
+  opacity: 0;
+}
+.intro .crt-line.go { animation: crt-on .5s cubic-bezier(.2, .8, .2, 1) forwards; }
+@keyframes crt-on {
+  0%   { opacity: 1; transform: translate(-50%, -50%) scale(0.002, 0.004); }
+  35%  { opacity: 1; transform: translate(-50%, -50%) scale(1, 0.004); }
+  70%  { opacity: 1; transform: translate(-50%, -50%) scale(1, 1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1, 1); }
+}
+
+/* 2. static: drawn on the canvas */
+.intro .static { transition: opacity .15s; }
+.intro .roll {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 18%;
+  background: linear-gradient(transparent, rgba(255, 255, 255, .18), transparent);
+  animation: roll 1.1s linear infinite;
+}
+@keyframes roll { from { top: -20%; } to { top: 110%; } }
+
+/* 3. test card */
+.intro .bars { display: flex; flex-direction: column; background: #000; }
+.intro .bars .bar-top { flex: 7; display: flex; }
+.intro .bars .bar-mid { flex: 1; display: flex; }
+.intro .bars .bar-bot { flex: 2; display: flex; }
+.intro .bars div > span { flex: 1; }
+.intro .bars.on { animation: jitter .12s steps(2) infinite; }
+@keyframes jitter { 50% { transform: translateX(calc(var(--u) * .6)); } }
+.intro .standby {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  transform: translate(-50%, -50%);
+  background: #000;
+  color: #fff;
+  font: 800 calc(var(--u) * 3.4) / 1 "DejaVu Sans Mono", ui-monospace, monospace;
+  letter-spacing: .2em;
+  padding: calc(var(--u) * 1.4) calc(var(--u) * 3);
+  border: calc(var(--u) * .4) solid #fff;
+}
+
+/* 4. title card: a game-show stage */
+.intro .stage {
+  background:
+    radial-gradient(ellipse at 50% 120%, rgba(255, 190, 60, .35), transparent 55%),
+    radial-gradient(ellipse at 50% 40%, #6b0a12 0%, #2a0308 55%, #0b0002 100%);
+  display: grid;
+  place-items: center;
+}
+.intro .stage.on { animation: stage-in .35s ease-out; }
+@keyframes stage-in { from { filter: brightness(3) saturate(0); transform: scale(1.08); } }
+
+/* stage curtains */
+.intro .curtain {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 14%;
+  background: repeating-linear-gradient(90deg, #5a0710 0 calc(var(--u) * 1.6), #8e0f1c calc(var(--u) * 2.6), #5a0710 calc(var(--u) * 3.6));
+  box-shadow: inset 0 0 calc(var(--u) * 5) rgba(0, 0, 0, .8);
+}
+.intro .curtain.l { left: 0; border-radius: 0 0 60% 0; }
+.intro .curtain.r { right: 0; border-radius: 0 0 0 60%; }
+
+/* sweeping spotlights */
+.intro .spot {
+  position: absolute;
+  bottom: -10%;
+  width: 34vw;
+  height: 130%;
+  background: linear-gradient(to top, rgba(255, 244, 200, .38), rgba(255, 244, 200, 0) 85%);
+  clip-path: polygon(45% 100%, 55% 100%, 100% 0, 0 0);
+  transform-origin: 50% 100%;
+  mix-blend-mode: screen;
+}
+.intro .spot.a { left: 8%; animation: sweep-a 2.4s ease-in-out infinite alternate; }
+.intro .spot.b { right: 8%; animation: sweep-b 2.1s ease-in-out infinite alternate; }
+@keyframes sweep-a { from { transform: rotate(-28deg); } to { transform: rotate(22deg); } }
+@keyframes sweep-b { from { transform: rotate(26deg); } to { transform: rotate(-24deg); } }
+
+/* marquee sign with chasing bulbs */
+.intro .marquee {
+  position: relative;
+  padding: calc(var(--u) * 3.4) calc(var(--u) * 6);
+  border-radius: calc(var(--u) * 3);
+  background: linear-gradient(180deg, #ffcf3a, #f39c12);
+  box-shadow: 0 0 0 calc(var(--u) * .8) #7a3e00, 0 calc(var(--u) * 2) calc(var(--u) * 6) rgba(0, 0, 0, .7),
+    0 0 calc(var(--u) * 12) rgba(255, 190, 60, .45);
+  text-align: center;
+  transform: scale(0) rotate(-8deg);
+}
+.intro .stage.on .marquee { animation: sign-in .7s cubic-bezier(.3, 1.6, .5, 1) .1s forwards; }
+@keyframes sign-in { to { transform: scale(1) rotate(-3deg); } }
+.intro .bulbs { position: absolute; inset: calc(var(--u) * 1.1); pointer-events: none; }
+.intro .bulb {
+  position: absolute;
+  width: calc(var(--u) * 1.1);
+  height: calc(var(--u) * 1.1);
+  margin: calc(var(--u) * -.55);
+  border-radius: 50%;
+  background: #fff6c8;
+  box-shadow: 0 0 calc(var(--u) * 1.2) #fff1a0;
+  animation: chase .5s steps(1) infinite;
+}
+.intro .bulb:nth-child(odd) { animation-delay: .25s; }
+@keyframes chase { 50% { background: #7a4a00; box-shadow: none; } }
+
+.intro .its, .intro .title {
+  font-family: "Arial Black", "DejaVu Sans", system-ui, sans-serif;
+  font-weight: 900;
+  line-height: .95;
+  color: #fff;
+  -webkit-text-stroke: calc(var(--u) * .25) #3b0006;
+  text-shadow: calc(var(--u) * .5) calc(var(--u) * .6) 0 #3b0006, 0 0 calc(var(--u) * 3) rgba(255, 255, 255, .35);
+}
+.intro .its { font-size: calc(var(--u) * 4.4); letter-spacing: .12em; margin-bottom: calc(var(--u) * 1); }
+.intro .title { font-size: calc(var(--u) * 10.5); white-space: nowrap; }
+.intro .title .tv { color: #ff2b3a; }
+.intro .ch {
+  display: inline-block;
+  transform: translateY(-140%) scale(.2);
+  opacity: 0;
+}
+.intro .ch.pop { animation: pop .45s cubic-bezier(.3, 1.8, .5, 1) forwards; }
+@keyframes pop { to { transform: none; opacity: 1; } }
+.intro .ch.pop.wobble { animation: pop .45s cubic-bezier(.3, 1.8, .5, 1) forwards, wobble 1.2s ease-in-out .5s infinite; }
+@keyframes wobble { 0%, 100% { transform: none; } 50% { transform: translateY(calc(var(--u) * -.8)) rotate(-3deg); } }
+
+.intro .tagline {
+  position: absolute;
+  bottom: 12%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: #ffe9a8;
+  font: 700 calc(var(--u) * 2.2) / 1 system-ui, "DejaVu Sans", sans-serif;
+  letter-spacing: .35em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity .5s;
+}
+.intro .tagline.on { opacity: 1; }
+.intro .skip {
+  position: absolute;
+  right: calc(var(--u) * 3);
+  bottom: calc(var(--u) * 2.4);
+  color: rgba(255, 255, 255, .55);
+  font: 600 calc(var(--u) * 1.3) / 1 system-ui, "DejaVu Sans", sans-serif;
+}
+
+/* 5. out: the picture zooms into the start page */
+.intro.out { animation: intro-out .55s ease-in forwards; }
+@keyframes intro-out { to { opacity: 0; transform: scale(1.25); filter: blur(calc(var(--u) * .6)); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .intro *, .intro { animation-duration: .01s !important; animation-iteration-count: 1 !important; }
+}

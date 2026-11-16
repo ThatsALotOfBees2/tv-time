@@ -130,6 +130,7 @@
     document.getElementById('f-url').value = '';
     document.getElementById('f-error').hidden = true;
     renderManage();
+    renderIntroToggle();
     dialog.hidden = false;
     document.getElementById('f-name').focus();
   }
@@ -179,6 +180,21 @@
     saveSites(list);
     closeDialog();
   }
+  // ---------- startup intro settings (intro.js) ----------
+  function renderIntroToggle() {
+    var on = !window.TVTimeIntro || window.TVTimeIntro.enabled();
+    document.getElementById('intro-toggle').textContent = 'Intro at start-up: ' + (on ? 'on' : 'off');
+  }
+  document.getElementById('intro-toggle').addEventListener('click', function () {
+    if (!window.TVTimeIntro) return;
+    window.TVTimeIntro.setEnabled(!window.TVTimeIntro.enabled());
+    renderIntroToggle();
+  });
+  document.getElementById('intro-play').addEventListener('click', function () {
+    closeDialog();
+    if (window.TVTimeIntro) window.TVTimeIntro.play();
+  });
+
   document.getElementById('f-save').addEventListener('click', saveFromDialog);
   document.getElementById('f-cancel').addEventListener('click', closeDialog);
   dialog.addEventListener('click', function (e) { if (e.target === dialog) closeDialog(); });
