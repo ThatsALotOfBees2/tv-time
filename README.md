@@ -26,12 +26,16 @@ on a marquee sign with chasing lights, spotlights, confetti, a brass fanfare and
 the sound is generated in code (`web/start/intro.js`). Any button skips it. It plays once per
 start-up, and *Add / edit sites* has an on/off switch and a *Play it now* button.
 
-**Your own sound:** put a clip named `intro-sound.mp3` (or `.ogg`, `.wav`, `.m4a`) in `web/start/`
-and it plays instead of the fanfare; the title card stays up for as long as the clip runs
-(up to 9 seconds). Then:
-* Raspberry Pi: run `python3 pi/build-extension.py` (or `./pi/install.sh` again) and restart.
-* Android: commit the file and let GitHub build a new APK. Keep in mind that a clip taken from a
-  game, show or song belongs to its owner, so only commit it to a private repository.
+**The "It's TV time!" voice line:** `web/start/intro-sound.mp3` is played instead of the fanfare
+when it's there. The sign pops in word by word in time with it ("IT'S" / "T" / "V" / "TIME!"),
+then confetti, a cymbal and applause. The moment of each word is set in
+`web/start/intro-sound-timing.js` (in seconds); without that file the timing is estimated from
+the clip's length. To use a different clip, replace the mp3 (`.ogg`, `.wav`, `.m4a` also work),
+adjust or delete the timing file, then:
+* Raspberry Pi: `python3 pi/build-extension.py` (or `./pi/install.sh` again) and restart.
+* Android: commit and let GitHub build a new APK.
+
+Without any clip, the intro uses its own synthesised drum roll, fanfare and applause.
 
 ## Get the APK
 

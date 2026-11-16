@@ -4,9 +4,11 @@
  *   old TV switching on -> static -> test card + beep -> game-show title card
  *   "IT'S TV TIME!" with marquee lights, spotlights, confetti, fanfare and applause.
  *
- * All sound is synthesised here. To use your own sound clip instead of the fanfare, put a file
- * named intro-sound.mp3 (or .ogg / .wav / .m4a) next to this file; the title card then stays
- * up for as long as the clip plays (up to 9 seconds).
+ * Without a clip, all sound is synthesised here. With a file named intro-sound.mp3 (or .ogg /
+ * .wav / .m4a) next to this file, that clip plays instead of the fanfare, and the sign pops in
+ * word by word in time with it ("IT'S" / "T" / "V" / "TIME!"), followed by a cymbal and applause.
+ * intro-sound-timing.js gives the exact moment of each word in the clip (in seconds); without it
+ * the timing is estimated from the clip's length.
  *
  * Plays once per start-up. Can be switched off or replayed from "Add / edit sites".
  */
@@ -186,6 +188,11 @@
         f.connect(g);
         g.connect(out);
         play(s, t, dur);
+      },
+      cymbal: function () {
+        var t = now();
+        noiseHit(t, 1.7, 'highpass', 5500, 0.4);
+        noiseHit(t, 0.25, 'lowpass', 180, 0.8);
       },
       stop: function () {
         try {
@@ -411,28 +418,64 @@
         if (finished) return;
         clip = found;
         show.stage.classList.add('on');
-        var hold = 3300;
+        var letters = show.letters;      // 0 = IT'S, 1 = T, 2 = V, 3 = space, 4-7 = TIME, 8 = !
+        function pop(k) {
+          var n = letters[k];
+          if (!n || n.classList.contains('pop')) return;
+          n.classList.add('pop');
+          if (k > 0) at(500, function () { n.classList.add('wobble'); });
+        }
+
         if (clip) {
+          // Your own clip: the sign pops in word by word, in time with it.
+          var d = isFinite(clip.duration) && clip.duration > 0 ? clip.duration : 3;
+          var tm = window.TVTIME_INTRO_TIMING ||
+            { its: d * 0.02, t: d * 0.25, v: d * 0.41, time: d * 0.58, bang: d * 0.87 };
+          var cues = [
+            [tm.its, function () { pop(0); }],
+            [tm.t, function () { pop(1); }],
+            [tm.v, function () { pop(2); pop(3); }],
+            [tm.time, function () { [4, 5, 6, 7].forEach(function (k, i) { at(i * 90, function () { pop(k); }); }); }],
+            [tm.bang, function () {
+              for (var k = 0; k < letters.length; k++) pop(k);
+              stops.push(runConfetti(show.confetti));
+              if (sound) sound.cymbal();
+            }],
+            [d, function () {
+              show.tagline.classList.add('on');
+              if (sound) sound.applause(0, 2.2);
+            }]
+          ];
+          var started = performance.now();
           clip.play().catch(function () {});
-          if (isFinite(clip.duration) && clip.duration > 0) hold = Math.min(9000, Math.max(2600, clip.duration * 1000 + 400));
-        } else if (sound) {
+          (function follow() {
+            if (finished) return;
+            // Follow the clip's own position so the sign stays in sync; use the clock if it can't play.
+            var pos = clip.ended ? Infinity
+              : (!clip.paused || clip.currentTime > 0) ? clip.currentTime
+              : Math.max(0, (performance.now() - started) / 1000 - 0.4);
+            while (cues.length && pos >= cues[0][0]) cues.shift()[1]();
+            if (cues.length) requestAnimationFrame(follow);
+          })();
+          at(Math.min(9500, d * 1000 + 1800), function () { finish(false); });
+          return;
+        }
+
+        // Built-in show: drum roll, fanfare, applause.
+        if (sound) {
           sound.fanfare();
           sound.applause(1.4, 2.4);
         }
-        var letters = show.letters;
-        var first = clip ? 150 : 650;
+        var first = 650;
         for (var i = 0; i < letters.length; i++) {
-          (function (n, k) {
+          (function (k) {
             // "IT'S" first, then T-V-T-I-M-E-! one letter at a time
-            at(first + (k === 0 ? 0 : 260 + k * 85), function () {
-              n.classList.add('pop');
-              if (k > 0) at(500, function () { n.classList.add('wobble'); });
-            });
-          })(letters[i], i);
+            at(first + (k === 0 ? 0 : 260 + k * 85), function () { pop(k); });
+          })(i);
         }
         at(first + 900, function () { stops.push(runConfetti(show.confetti)); });
         at(first + 1300, function () { show.tagline.classList.add('on'); });
-        at(first + Math.max(hold - first, 1800) + 600, function () { finish(false); });
+        at(first + 3250, function () { finish(false); });
       });
     });
   }
