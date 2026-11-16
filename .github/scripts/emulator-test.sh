@@ -45,6 +45,13 @@ if grep -q "FATAL EXCEPTION" "$OUT/logcat.txt"; then
   grep -A 20 "FATAL EXCEPTION" "$OUT/logcat.txt" | head -40
   STATUS=1
 fi
+if grep -q "uBlock Origin ready" "$OUT/logcat.txt"; then
+  echo "uBlock Origin: $(grep -m1 -o 'uBlock Origin ready.*' "$OUT/logcat.txt")"
+else
+  echo "::error::uBlock Origin did not start"
+  grep -iE "ublock|webextension|Extension is invalid" "$OUT/logcat.txt" | head -20
+  STATUS=1
+fi
 if [ -z "$(adb shell pidof "$PKG" | tr -d '\r')" ]; then
   echo "::error::The app is no longer running"
   STATUS=1

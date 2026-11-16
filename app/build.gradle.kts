@@ -61,6 +61,12 @@ android {
         }
     }
 
+    // Keep folders starting with "_" in assets: uBlock Origin needs its _locales folder
+    // (Android's default pattern silently drops them).
+    androidResources {
+        ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~"
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

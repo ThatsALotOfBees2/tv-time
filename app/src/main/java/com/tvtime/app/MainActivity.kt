@@ -25,7 +25,6 @@ import org.json.JSONObject
 import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoRuntime
-import org.mozilla.geckoview.GeckoRuntimeSettings
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission
 import org.mozilla.geckoview.GeckoSessionSettings
@@ -105,7 +104,7 @@ class MainActivity : Activity() {
         strictOn = prefs.getBoolean(PREF_STRICT, true)
         refreshHomeSite()
 
-        runtime = Engine.runtime(this)
+        runtime = TvTimeApp.runtime(this)
         openSession()
         setupCursor()
         buildMenu()
@@ -154,18 +153,6 @@ class MainActivity : Activity() {
     }
 
     // ---------- engine ----------
-
-    /** One GeckoRuntime per app process (GeckoView allows only one). */
-    private object Engine {
-        private var instance: GeckoRuntime? = null
-        fun runtime(activity: Activity): GeckoRuntime =
-            instance ?: GeckoRuntime.create(
-                activity.applicationContext,
-                GeckoRuntimeSettings.Builder()
-                    .consoleOutput(true)
-                    .build(),
-            ).also { instance = it }
-    }
 
     private fun openSession() {
         val desktop = prefs.getBoolean(PREF_DESKTOP, false)
