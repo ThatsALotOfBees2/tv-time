@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 # Starts Chromium full screen on the TV Time start page, with the TV Time extension
 # (ad blocker, pop-up/redirect blocker, remote shortcuts). Restarts it if it ever closes.
-# To stop it (e.g. over SSH):  touch ~/.config/tv-time-browser/STOP && pkill -f "brave|chromium"
+# To stop it (e.g. over SSH):  touch ~/.config/tv-time-browser/STOP && pkill -f chromium
 DIR="$(cd "$(dirname "$0")" && pwd)"
 PROFILE="$HOME/.config/tv-time-browser"
 START="chrome-extension://johjcnbgekmlamllgcjfciglaaklblcp/start/index.html"
-# Brave first (built-in Shields ad blocker), Chromium as the fallback.
-BROWSER="$(command -v brave-browser || command -v chromium || command -v chromium-browser)"
+BROWSER="$(command -v chromium || command -v chromium-browser)"
 if [ -z "$BROWSER" ]; then
   echo "Chromium is not installed (sudo apt install chromium)" >&2
   exit 1

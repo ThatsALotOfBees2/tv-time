@@ -144,7 +144,6 @@
     if (ev.data && typeof ev.data.__tvtime === 'string') handle(ev.data.__tvtime);
   });
   if (isTop) window.__tvtimeMedia = handle;
-  window.__tvtimeAct = act;   // used by the Android app's bridge.js (each frame acts on its own video)
 
   // ---------- 5. Scroll under pointer ----------
   if (isTop) {

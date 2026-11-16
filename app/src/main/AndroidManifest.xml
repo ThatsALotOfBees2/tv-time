@@ -11,7 +11,6 @@
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
     <application
-        android:name=".TvTimeApp"
         android:allowBackup="true"
         android:banner="@drawable/banner"
         android:hardwareAccelerated="true"
