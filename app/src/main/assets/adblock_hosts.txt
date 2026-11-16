@@ -100,7 +100,6 @@ syndication.dynsrvtbg.com
 deliverimp.com
 whos.amung.us
 histats.com
-cloudvideo.ads
 streamads.net
 vidads.net
 aclib.net

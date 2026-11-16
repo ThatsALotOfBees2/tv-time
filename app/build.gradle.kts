@@ -36,6 +36,13 @@ android {
         }
     }
 
+    // The start page and the YouTube ad remover are shared with the Raspberry Pi version.
+    sourceSets {
+        getByName("main") {
+            assets.srcDirs("src/main/assets", "../web")
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

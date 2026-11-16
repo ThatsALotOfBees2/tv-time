@@ -48,3 +48,26 @@ jobs:
           body: "Automatic build of ${{ github.sha }}. Install tv-time.apk on your Android TV / phone."
           files: out/tv-time.apk
           make_latest: true
+
+  pi:
+    # Checks the Raspberry Pi parts: the extension must be rebuilt from the shared sources
+    # (python3 pi/build-extension.py) whenever web/ or the Android assets change.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extension is up to date with the shared sources
+        run: |
+          python3 pi/build-extension.py
+          git diff --exit-code -- pi/extension || (echo "::error::Run 'python3 pi/build-extension.py' and commit the result" && exit 1)
+      - name: Syntax checks
+        run: |
+          for f in web/start/start.js web/shield/youtube.js pi/extension/*.js app/src/main/assets/inject.js; do node --check "$f"; done
+          python3 -m py_compile pi/tvremote.py pi/build-extension.py
+          bash -n pi/install.sh pi/launch.sh pi/cec-setup.sh
+          python3 -c "import json; json.load(open('pi/extension/manifest.json')); json.load(open('pi/extension/rules/ads.json'))"
+      - name: Package the Pi extension
+        run: cd pi && zip -qr ../tv-time-pi-extension.zip extension
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tv-time-pi-extension
+          path: tv-time-pi-extension.zip

@@ -37,6 +37,8 @@ class AdBlocker(private val context: Context) {
         "/popunder", "popunder.js", "/pop.js", "/popads", "/pu.js",
         "/ads.js?", "/adsbygoogle", "/pagead/", "/afu.php", "/ad_status.js",
         "/prebid", "/push-notifications", "/sw-push", "/onclick.js",
+        // YouTube ad + ad-tracking endpoints
+        "/api/stats/ads", "/ptracking", "/get_midroll_", "/youtubei/v1/log_event",
     )
 
     fun load() {
@@ -107,11 +109,11 @@ class AdBlocker(private val context: Context) {
 
     fun shouldBlock(url: Uri): Boolean {
         val host = url.host?.lowercase(Locale.ROOT) ?: return false
-        if (siteKey(host) in neverBlockKeys) return false
-        if (isBlockedHost(host)) return true
         val path = (url.encodedPath ?: "") + (url.encodedQuery?.let { "?$it" } ?: "")
         val lower = path.lowercase(Locale.ROOT)
-        return urlPatterns.any { lower.contains(it) }
+        if (urlPatterns.any { lower.contains(it) }) return true
+        if (siteKey(host) in neverBlockKeys) return false
+        return isBlockedHost(host)
     }
 
     fun isBlockedHost(host: String): Boolean {

@@ -1,0 +1,354 @@
+[
+ {
+  "id": 1,
+  "priority": 1,
+  "action": {
+   "type": "block"
+  },
+  "condition": {
+   "requestDomains": [
+    "33across.com",
+    "a-ads.com",
+    "acint.net",
+    "aclib.net",
+    "acscdn.com",
+    "ad-delivery.net",
+    "ad-maven.com",
+    "adblockanalytics.com",
+    "adcash.com",
+    "adf.ly",
+    "adform.net",
+    "adkernel.com",
+    "admaven.com",
+    "admavenads.com",
+    "adnium.com",
+    "adnxs.com",
+    "ads.twitter.com",
+    "adservice.google.com",
+    "adskeeper.co.uk",
+    "adskeeper.com",
+    "adsrvr.org",
+    "adsterra.com",
+    "adsterratools.com",
+    "adtelligent.com",
+    "adtng.com",
+    "advertising.com",
+    "adxpremium.services",
+    "amazon-adsystem.com",
+    "amplitude.com",
+    "an.yandex.ru",
+    "analytics.tiktok.com",
+    "aniview.com",
+    "bat.bing.com",
+    "bidswitch.net",
+    "bidvertiser.com",
+    "buysellads.com",
+    "carbonads.com",
+    "casalemedia.com",
+    "chartbeat.com",
+    "clarity.ms",
+    "clickadu.com",
+    "clickaine.com",
+    "clksite.com",
+    "connatix.com",
+    "connect.facebook.net",
+    "contextweb.com",
+    "cpmrevenuegate.com",
+    "crazyegg.com",
+    "criteo.com",
+    "criteo.net",
+    "deliverimp.com",
+    "displaycontentnetwork.com",
+    "districtm.io",
+    "dolohen.com",
+    "doubleclick.net",
+    "dtscdn.com",
+    "dtscout.com",
+    "effectivecpmgate.com",
+    "effectivegatecpm.com",
+    "effectiveratecpm.com",
+    "emxdgt.com",
+    "evadav.com",
+    "ex.co",
+    "exdynsrv.com",
+    "exoclick.com",
+    "exosrv.com",
+    "facebook.net",
+    "fullstory.com",
+    "galaksion.com",
+    "google-analytics.com",
+    "googleadservices.com",
+    "googlesyndication.com",
+    "googletagmanager.com",
+    "googletagservices.com",
+    "gumgum.com",
+    "highcpmgate.com",
+    "highcpmrevenuegate.com",
+    "highperformancecpm.com",
+    "highperformancedisplayformat.com",
+    "highperformanceformat.com",
+    "highrevenuegate.com",
+    "highrevenuenetwork.com",
+    "hilltopads.com",
+    "hilltopads.net",
+    "histats.com",
+    "hotjar.com",
+    "imasdk.googleapis.com",
+    "indexww.com",
+    "inspectlet.com",
+    "juicyads.com",
+    "lijit.com",
+    "linkvertise.com",
+    "luckyorange.com",
+    "magsrv.com",
+    "mc.yandex.com",
+    "mc.yandex.ru",
+    "media.net",
+    "mgid.com",
+    "mixpanel.com",
+    "moatads.com",
+    "monetag.com",
+    "monetag.io",
+    "mouseflow.com",
+    "newrelic.com",
+    "nr-data.net",
+    "onclasrv.com",
+    "onclickads.net",
+    "onclickalgo.com",
+    "onclickperformance.com",
+    "onclkds.com",
+    "openx.net",
+    "ouo.io",
+    "outbrain.com",
+    "pagead2.googlesyndication.com",
+    "popads.net",
+    "popcash.net",
+    "popmyads.com",
+    "primis.tech",
+    "profitablecpmgate.com",
+    "profitablecpmrate.com",
+    "profitabledisplaynetwork.com",
+    "profitablegatecpm.com",
+    "propellerads.com",
+    "propellerclick.com",
+    "propellerpops.com",
+    "pubmatic.com",
+    "pushame.com",
+    "pushground.com",
+    "pushnest.com",
+    "pushwhy.com",
+    "quantcount.com",
+    "quantserve.com",
+    "realsrv.com",
+    "realtimecpm.com",
+    "revcontent.com",
+    "richads.com",
+    "richpush.co",
+    "rollerads.com",
+    "rubiconproject.com",
+    "scorecardresearch.com",
+    "segment.io",
+    "servedby-buysellads.com",
+    "sharethrough.com",
+    "shorte.st",
+    "smartadserver.com",
+    "sovrn.com",
+    "spotx.tv",
+    "spotxchange.com",
+    "statcounter.com",
+    "static.ads-twitter.com",
+    "streamads.net",
+    "syndication.dynsrvtbg.com",
+    "taboola.com",
+    "teads.tv",
+    "toprevenuegate.com",
+    "trafficfactory.biz",
+    "trafficjunky.net",
+    "trafficstars.com",
+    "tsyndicate.com",
+    "twinrdsrv.com",
+    "unrulymedia.com",
+    "vidads.net",
+    "vidoomy.com",
+    "whos.amung.us",
+    "yandexadexchange.net",
+    "yieldlab.net",
+    "yieldmo.com",
+    "yllix.com",
+    "zeropark.com"
+   ],
+   "excludedResourceTypes": [
+    "main_frame"
+   ]
+  }
+ },
+ {
+  "id": 2,
+  "priority": 1,
+  "action": {
+   "type": "block"
+  },
+  "condition": {
+   "urlFilter": "||youtube.com/api/stats/ads",
+   "excludedResourceTypes": [
+    "main_frame"
+   ]
+  }
+ },
+ {
+  "id": 3,
+  "priority": 1,
+  "action": {
+   "type": "block"
+  },
+  "condition": {
+   "urlFilter": "||youtube.com/pagead/",
+   "excludedResourceTypes": [
+    "main_frame"
+   ]
+  }
+ },
+ {
+  "id": 4,
+  "priority": 1,
+  "action": {
+   "type": "block"
+  },
+  "condition": {
+   "urlFilter": "||youtube.com/ptracking",
+   "excludedResourceTypes": [
+    "main_frame"
+   ]
+  }
+ },
+ {
+  "id": 5,
+  "priority": 1,
+  "action": {
+   "type": "block"
+  },
+  "condition": {
+   "urlFilter": "||youtube.com/get_midroll_",
+   "excludedResourceTypes": [
+    "main_frame"
+   ]
+  }
+ },
+ {
+  "id": 6,
+  "priority": 1,
+  "action": {
+   "type": "block"
+  },
+  "condition": {
+   "urlFilter": "||youtube.com/youtubei/v1/log_event",
+   "excludedResourceTypes": [
+    "main_frame"
+   ]
+  }
+ },
+ {
+  "id": 7,
+  "priority": 1,
+  "action": {
+   "type": "block"
+  },
+  "condition": {
+   "urlFilter": "/popunder",
+   "excludedResourceTypes": [
+    "main_frame"
+   ]
+  }
+ },
+ {
+  "id": 8,
+  "priority": 1,
+  "action": {
+   "type": "block"
+  },
+  "condition": {
+   "urlFilter": "popunder.js",
+   "excludedResourceTypes": [
+    "main_frame"
+   ]
+  }
+ },
+ {
+  "id": 9,
+  "priority": 1,
+  "action": {
+   "type": "block"
+  },
+  "condition": {
+   "urlFilter": "/pop.js",
+   "excludedResourceTypes": [
+    "main_frame"
+   ]
+  }
+ },
+ {
+  "id": 10,
+  "priority": 1,
+  "action": {
+   "type": "block"
+  },
+  "condition": {
+   "urlFilter": "/popads",
+   "excludedResourceTypes": [
+    "main_frame"
+   ]
+  }
+ },
+ {
+  "id": 11,
+  "priority": 1,
+  "action": {
+   "type": "block"
+  },
+  "condition": {
+   "urlFilter": "/pu.js",
+   "excludedResourceTypes": [
+    "main_frame"
+   ]
+  }
+ },
+ {
+  "id": 12,
+  "priority": 1,
+  "action": {
+   "type": "block"
+  },
+  "condition": {
+   "urlFilter": "/afu.php",
+   "excludedResourceTypes": [
+    "main_frame"
+   ]
+  }
+ },
+ {
+  "id": 13,
+  "priority": 1,
+  "action": {
+   "type": "block"
+  },
+  "condition": {
+   "urlFilter": "/push-notifications",
+   "excludedResourceTypes": [
+    "main_frame"
+   ]
+  }
+ },
+ {
+  "id": 14,
+  "priority": 1,
+  "action": {
+   "type": "block"
+  },
+  "condition": {
+   "urlFilter": "/onclick.js",
+   "excludedResourceTypes": [
+    "main_frame"
+   ]
+  }
+ }
+]

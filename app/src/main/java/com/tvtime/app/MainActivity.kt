@@ -93,7 +93,8 @@ class MainActivity : Activity() {
         adblockOn = prefs.getBoolean(PREF_ADBLOCK, true)
         strictOn = prefs.getBoolean(PREF_STRICT, true)
 
-        injectJs = assets.open("inject.js").bufferedReader().use { it.readText() }
+        injectJs = assets.open("inject.js").bufferedReader().use { it.readText() } + "\n" +
+            assets.open("shield/youtube.js").bufferedReader().use { it.readText() }
 
         adBlocker = AdBlocker(this)
         refreshHomeSite()
@@ -157,10 +158,14 @@ class MainActivity : Activity() {
         prefs.getString(PREF_HOME, null) ?: getString(R.string.default_home_url)
 
     private fun refreshHomeSite() {
-        val key = AdBlocker.siteKey(Uri.parse(homeUrl()).host)
-        allowedSites.add(key)
+        allowedSites.addAll(DEFAULT_SITES)
+        Uri.parse(homeUrl()).host?.let { allowedSites.add(AdBlocker.siteKey(it)) }
         adBlocker.neverBlockKeys = allowedSites.toSet()
     }
+
+    /** The built-in TV Time start page (shared with the Raspberry Pi version, see web/start). */
+    private fun onStartPage(): Boolean =
+        customView == null && webView.url?.startsWith(START_PAGE_PREFIX) == true
 
     // ---------- WebView ----------
 
@@ -226,6 +231,9 @@ class MainActivity : Activity() {
         override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
             if (!docStartScript) view.evaluateJavascript(injectJs, null)
             menuUrl.text = url ?: ""
+            // The start page is driven with arrow keys; everywhere else the pointer is used.
+            if (url?.startsWith(START_PAGE_PREFIX) == true) cursor.hideCursor()
+            else if (!playerMode && menu.visibility != View.VISIBLE) cursor.showCursor()
         }
 
         override fun onPageFinished(view: WebView, url: String?) {
@@ -256,6 +264,12 @@ class MainActivity : Activity() {
     private fun blockNavigation(uri: Uri, mainFrame: Boolean): Boolean {
         val scheme = uri.scheme?.lowercase() ?: return false
         if (scheme in setOf("about", "data", "blob", "javascript")) return false
+        if (scheme == "file" && uri.toString().startsWith(START_PAGE_PREFIX)) return false
+        // Tiles on the start page are sites you chose yourself: always allowed.
+        if (mainFrame && onStartPage() && (scheme == "http" || scheme == "https")) {
+            uri.host?.let { allowedSites.add(AdBlocker.siteKey(it)) }
+            return false
+        }
         if (scheme != "http" && scheme != "https") {
             // intent://, market://, tg:// ... on these sites they are always ads trying to open other apps
             osd("Blocked link to another app")
@@ -561,6 +575,25 @@ class MainActivity : Activity() {
             return super.dispatchKeyEvent(event)
         }
 
+        if (onStartPage()) {
+            // Arrow keys go to the page (it moves the highlight between tiles); OK = Enter.
+            when (code) {
+                KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT,
+                KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
+                    cursor.hideCursor()
+                    if (!webView.hasFocus()) webView.requestFocus()
+                    return super.dispatchKeyEvent(event)
+                }
+            }
+            if (isOk(code)) {
+                return longPressable(event) {
+                    if (!webView.hasFocus()) webView.requestFocus()
+                    webView.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER))
+                    webView.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER))
+                }
+            }
+        }
+
         val dir = when (code) {
             KeyEvent.KEYCODE_DPAD_LEFT -> -1 to 0
             KeyEvent.KEYCODE_DPAD_RIGHT -> 1 to 0
@@ -630,6 +663,7 @@ class MainActivity : Activity() {
     private val items: List<Item> by lazy {
         listOf(
             Item({ "Home" }) { hideMenu(); webView.loadUrl(homeUrl()) },
+            Item({ "Start page (Streamex, YouTube, your sites)" }) { hideMenu(); webView.loadUrl(START_PAGE) },
             Item({ "Back" }) { hideMenu(); if (webView.canGoBack()) webView.goBack() },
             Item({ "Forward" }) { hideMenu(); if (webView.canGoForward()) webView.goForward() },
             Item({ "Reload" }) { hideMenu(); webView.reload() },
@@ -759,6 +793,9 @@ class MainActivity : Activity() {
     }
 
     companion object {
+        private const val START_PAGE = "file:///android_asset/start/index.html"
+        private const val START_PAGE_PREFIX = "file:///android_asset/start/"
+        private val DEFAULT_SITES = listOf("streamex", "youtube", "youtu", "youtube-nocookie", "google")
         private const val PREF_HOME = "home_url"
         private const val PREF_ADBLOCK = "adblock"
         private const val PREF_STRICT = "strict"
