@@ -14,7 +14,7 @@ adb shell settings put system accelerometer_rotation 0
 adb shell settings put system user_rotation 1
 adb shell wm user-rotation lock 1 >/dev/null 2>&1 || true
 
-adb install -r out/tv-time-x86_64.apk
+adb install -r out/tv-time.apk
 adb logcat -c
 adb shell am start -W -n "$PKG/.MainActivity"
 
@@ -43,13 +43,6 @@ STATUS=0
 if grep -q "FATAL EXCEPTION" "$OUT/logcat.txt"; then
   echo "::error::The app crashed - see logcat.txt"
   grep -A 20 "FATAL EXCEPTION" "$OUT/logcat.txt" | head -40
-  STATUS=1
-fi
-if grep -q "uBlock Origin ready" "$OUT/logcat.txt"; then
-  echo "uBlock Origin: $(grep -m1 -o 'uBlock Origin ready.*' "$OUT/logcat.txt")"
-else
-  echo "::error::uBlock Origin did not start"
-  grep -iE "ublock|webextension|Extension is invalid" "$OUT/logcat.txt" | head -20
   STATUS=1
 fi
 if [ -z "$(adb shell pidof "$PKG" | tr -d '\r')" ]; then

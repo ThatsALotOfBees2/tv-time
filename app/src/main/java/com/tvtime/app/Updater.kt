@@ -38,14 +38,10 @@ class Updater(private val context: Context) {
             val conn = open(url)
             val text = try { conn.inputStream.bufferedReader().use { it.readText() } } finally { conn.disconnect() }
             val json = JSONObject(text)
-            // One APK per CPU type ("apks"); "apk" is the fallback that runs on any ARM device.
-            val perAbi = json.optJSONObject("apks")
-            val apk = Build.SUPPORTED_ABIS.firstNotNullOfOrNull { abi -> perAbi?.optString(abi)?.takeIf { it.isNotEmpty() } }
-                ?: json.getString("apk")
             val release = Release(
                 json.getLong("versionCode"),
                 json.optString("versionName", json.getLong("versionCode").toString()),
-                apk,
+                json.getString("apk"),
             )
             if (release.versionCode > currentVersion()) release else null
         } catch (e: Exception) {

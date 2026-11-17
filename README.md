@@ -114,24 +114,29 @@ Make this page my Home, Clear cookies & cache, Exit.
 
 ## How the ad blocking works
 
-**Android app:** the app runs on Firefox's browser engine (GeckoView) with **uBlock Origin**
-built in - the same filter lists Brave Shields uses (EasyList, EasyPrivacy, uBlock filters,
-Peter Lowe's list) plus uBO's scriptlets for YouTube and streaming-site tricks. It is downloaded
-fresh into every build (`tools/fetch-ublock.sh`) and keeps its lists updated. On top of that:
-* pop-ups and new windows are never opened;
-* the page may only navigate to sites you chose (Streamex, YouTube, your tiles) - hijacked
-  clicks are stopped with "Blocked redirect to ...";
-* invisible click-trap overlays over players are removed (`app/src/main/assets/inject.js`).
+1. **Network blocking** - every request from the page and every iframe is checked against a
+   built-in list (`app/src/main/assets/adblock_hosts.txt`) plus the StevenBlack hosts list,
+   downloaded in the background and refreshed weekly. Matches get an empty response.
+2. **Pop-up / pop-under blocking** - new windows are always refused; `window.open` is
+   neutralised inside every frame.
+3. **Redirect blocking** - the main page is only allowed to navigate within the site you're
+   on (mirrors like `streamex.to` count as the same site). Hijacked clicks that try to send
+   you to another site are stopped and shown as "Blocked redirect to ...". Links to other
+   apps (`intent://`, `market://`) are always blocked. Turn this off in the menu if a site
+   legitimately needs to leave its domain; any address you type yourself is always allowed.
+4. **Click-trap removal** - invisible full-screen overlays that ad scripts put over the player
+   are removed, and common ad boxes are hidden.
+5. **YouTube** (`web/shield/youtube.js`) - the ad schedule is removed from the video data before
+   YouTube's player sees it, so ads aren't scheduled at all. If one plays anyway it is muted,
+   fast-forwarded and skipped; feed/search ads and the "ad blockers are not allowed" pop-up are
+   removed. YouTube changes this regularly, so an occasional ad may slip through until the
+   script is updated.
 
-Because GeckoView brings its own up-to-date engine, the app no longer depends on the TV's
-Android System WebView. The APK is bigger (one per CPU type, ~60-80 MB); the updater downloads
-the right one.
+Steps 2 and 4 run inside cross-origin video-player iframes too.
 
-**Raspberry Pi:** runs the real **Brave browser**, so it's Brave Shields 1:1 (Chromium is used
-only on 32-bit Pi OS, where Brave isn't available), plus the TV Time extension's pop-up killer,
-redirect guard and YouTube script.
-
-**Building locally:** run `tools/fetch-ublock.sh` once before `./gradlew assembleRelease`.
+**Keep Android System WebView up to date** (Play Store > Android System WebView). TV Time uses it
+to show websites, and many TV boxes ship an old one: Streamex doesn't load at all on WebView 83
+(tested on an Android 11 emulator). The app warns on start-up when the WebView is older than 100.
 
 ## Changing the home screen
 
