@@ -285,10 +285,68 @@
   var BURST = ['#ffd23f', '#ff3d8b', '#4df3ff', '#ffffff', '#9dff5c', '#c38bff'];
   var DEFAULT_TIMING = { its: 0.3, t: 0.8, v: 1.05, time: 1.4, bang: 2.05 };
 
+  // ======================================================================
+  // Sleek look: a calm, minimal intro (black, purple glow, the wordmark fading in on the voice line)
+  // ======================================================================
+  function playSleek(opts) {
+    var withSound = opts.sound !== false;
+    var root = document.createElement('div');
+    root.className = 'intro-sleek';
+    root.innerHTML = '<div class="glow"></div><div class="mark"><div class="its">It\u2019s</div>' +
+      '<div class="word"><span class="tv">T</span><span class="tv">V</span>&nbsp;<span>T</span><span>I</span><span>M</span><span>E</span></div>' +
+      '<div class="line"></div></div>';
+    document.body.appendChild(root);
+    var glow = root.querySelector('.glow'), its = root.querySelector('.its'), line = root.querySelector('.line');
+    var spans = root.querySelectorAll('.word span');
+    var timers = [], finished = false, voice = null;
+    var synth = withSound ? makeSynth() : null;
+    function at(ms, fn) { timers.push(setTimeout(fn, ms)); }
+    function on(el) { el.classList.add('on'); }
+
+    function end(fast) {
+      if (finished) return;
+      finished = true;
+      timers.forEach(clearTimeout);
+      window.removeEventListener('keydown', onKey, true);
+      if (voice) voice.pause();
+      if (synth) synth.stop();
+      root.classList.add('out');
+      setTimeout(function () { root.remove(); running = false; }, fast ? 250 : 650);
+    }
+    function onKey(e) { e.preventDefault(); e.stopImmediatePropagation(); end(true); }
+    window.addEventListener('keydown', onKey, true);
+    root.addEventListener('click', function () { end(true); });
+
+    at(50, function () { on(glow); });
+    var load = withSound ? loadAudio('intro-sound', 1300) : Promise.resolve(null);
+    load.then(function (clip) {
+      if (finished) return;
+      voice = clip;
+      var d = clip && isFinite(clip.duration) && clip.duration > 0 ? clip.duration : 2.6;
+      var tm = (clip && window.TVTIME_INTRO_TIMING) ||
+        { its: d * 0.02, t: d * 0.25, v: d * 0.41, time: d * 0.58, bang: d * 0.87 };
+      var lead = 350;
+      if (clip) at(lead, function () { clip.play().catch(function () {}); });
+      var ms = function (sec) { return lead + sec * 1000; };
+      at(ms(tm.its), function () { on(its); });
+      at(ms(tm.t), function () { on(spans[0]); });
+      at(ms(tm.v), function () { on(spans[1]); });
+      for (var k = 2; k < spans.length; k++) {
+        (function (n, i) { at(ms(tm.time) + i * 110, function () { on(n); }); })(spans[k], k - 2);
+      }
+      at(ms(tm.bang), function () {
+        on(line);
+        if (synth && synth.sparkle) synth.sparkle();
+      });
+      at(ms(Math.max(d, tm.bang + 0.6)) + 900, function () { end(false); });
+    });
+  }
+
   function play(opts) {
     if (running) return;
     running = true;
     opts = opts || {};
+    if (document.documentElement.classList.contains('theme-sleek')) return playSleek(opts);
     var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     // ---- canvas: 180 px high, as wide as the screen's shape ----

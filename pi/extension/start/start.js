@@ -82,11 +82,34 @@
     return '<svg class="px-icon" viewBox="0 0 ' + w + ' ' + h + '" shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet">' + rects + '</svg>';
   }
 
+  // ---------- look: "retro" (pixel art) or "sleek" (dark monochrome, royal purple) ----------
+  var THEME_KEY = 'tvtime.theme';
+  function loadTheme() {
+    var t = null;
+    try { t = localStorage.getItem(THEME_KEY); } catch (e) {}
+    return t === 'sleek' || t === 'retro' ? t : (window.TVTIME_THEME || 'retro');
+  }
+  var THEME = loadTheme();
+  document.documentElement.classList.add('theme-' + THEME);
+  var SLEEK = THEME === 'sleek';
+
+  // Clean line icons for the sleek look (24x24, stroked).
+  function lineSvg(paths) {
+    return '<svg class="px-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" ' +
+      'stroke-linecap="round" stroke-linejoin="round">' + paths + '</svg>';
+  }
+  var LINE = {
+    film: lineSvg('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M3 15h18M8 5v4M16 5v4M8 15v4M16 15v4"/>'),
+    play: lineSvg('<rect x="2.5" y="5" width="19" height="14" rx="4"/><path d="M10 9.2v5.6l4.8-2.8z" fill="currentColor"/>'),
+    tv: lineSvg('<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 3l4 4 4-4"/>'),
+    shield: lineSvg('<path d="M12 3l7 3v5c0 4.4-3 8.2-7 9.5C8 19.2 5 15.4 5 11V6z"/><path d="M9 12l2 2 4-4"/>')
+  };
+
   var MAIN_TILES = [
     { name: 'Streamex', sub: 'Movies & series', url: 'https://streamex.hn/', accent: '#ff3d8b',
-      icon: pixelSvg(ICONS.film, '#ffffff') },
-    { name: 'YouTube', sub: 'Videos, no ads', url: 'https://www.youtube.com/', accent: '#ff2b2b',
-      icon: pixelSvg(ICONS.play, '#ffffff', '#07030f') }
+      icon: SLEEK ? LINE.film : pixelSvg(ICONS.film, '#ffffff') },
+    { name: 'YouTube', sub: SLEEK ? 'Videos, without the ads' : 'Videos, no ads', url: 'https://www.youtube.com/', accent: '#ff2b2b',
+      icon: SLEEK ? LINE.play : pixelSvg(ICONS.play, '#ffffff', '#07030f') }
   ];
 
   var STORE_KEY = 'tvtime.customSites';
@@ -197,6 +220,7 @@
     document.getElementById('f-error').hidden = true;
     renderManage();
     renderIntroToggle();
+    renderThemeToggle();
     dialog.hidden = false;
     document.getElementById('f-name').focus();
   }
@@ -247,6 +271,15 @@
     closeDialog();
   }
   // ---------- startup intro settings (intro.js) ----------
+  function renderThemeToggle() {
+    document.getElementById('theme-toggle').textContent = 'Look: ' + (SLEEK ? 'Sleek' : 'Retro');
+  }
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    try { localStorage.setItem(THEME_KEY, SLEEK ? 'retro' : 'sleek'); } catch (e) {}
+    try { sessionStorage.setItem('tvtime.introShown', '1'); } catch (e) {}   // don't replay the intro
+    location.reload();
+  });
+
   function renderIntroToggle() {
     var on = !window.TVTimeIntro || window.TVTimeIntro.enabled();
     document.getElementById('intro-toggle').textContent = 'Intro at start-up: ' + (on ? 'on' : 'off');
@@ -370,8 +403,8 @@
   });
 
   // ---------- go ----------
-  document.getElementById('brand-icon').innerHTML = pixelSvg(ICONS.tv, '#ff3d8b', '#ffd23f');
-  document.getElementById('shield-icon').innerHTML = pixelSvg(ICONS.shield, '#5dff8a');
+  document.getElementById('brand-icon').innerHTML = SLEEK ? LINE.tv : pixelSvg(ICONS.tv, '#ff3d8b', '#ffd23f');
+  document.getElementById('shield-icon').innerHTML = SLEEK ? LINE.shield : pixelSvg(ICONS.shield, '#5dff8a');
   render();
   renderHints();
   tick();
