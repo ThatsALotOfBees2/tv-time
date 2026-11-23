@@ -210,7 +210,7 @@
 .theme-sleek .manage h3 { color: var(--s-dim); letter-spacing: .14em; text-transform: uppercase; font-size: calc(var(--u) * .95); }
 .theme-sleek .manage-row { border-top: 1px solid var(--s-line); }
 
-/* ---------- sleek intro (see intro.js) ---------- */
+/* ---------- sleek intro (see intro.js: drawn on a canvas) ---------- */
 .intro-sleek {
   position: fixed;
   top: 0;
@@ -218,64 +218,9 @@
   bottom: 0;
   left: 0;
   z-index: 100;
-  background: #050506;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: #050507;
   cursor: pointer;
-  font-family: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  color: #f2f2f4;
-  overflow: hidden;
   transition: opacity .6s ease;
-  --u: min(1vw, 1.78vh);
 }
-.intro-sleek .glow {
-  position: absolute;
-  width: 70vw;
-  height: 70vw;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(120, 81, 169, .35) 0%, transparent 60%);
-  opacity: 0;
-  transform: scale(.6);
-  transition: opacity 1.2s ease, transform 2.4s ease;
-}
-.intro-sleek .mark { position: relative; text-align: center; }
-.intro-sleek .its {
-  font-size: calc(var(--u) * 1.6);
-  font-weight: 500;
-  letter-spacing: .6em;
-  text-transform: uppercase;
-  color: #8b8b94;
-  opacity: 0;
-  transform: translateY(calc(var(--u) * 1));
-  transition: opacity .5s ease, transform .5s ease;
-}
-.intro-sleek .word {
-  font-size: calc(var(--u) * 9);
-  font-weight: 700;
-  letter-spacing: .12em;
-  line-height: 1.1;
-  margin-top: calc(var(--u) * 1);
-}
-.intro-sleek .word span {
-  display: inline-block;
-  opacity: 0;
-  filter: blur(calc(var(--u) * .8));
-  transform: translateY(calc(var(--u) * 1.5));
-  transition: opacity .45s ease, filter .45s ease, transform .45s ease;
-}
-.intro-sleek .word .tv { color: #a07fd6; }
-.intro-sleek .line {
-  height: 2px;
-  width: 0;
-  margin: calc(var(--u) * 2.2) auto 0;
-  background: linear-gradient(90deg, transparent, #7851a9, transparent);
-  transition: width 1.2s ease;
-}
-.intro-sleek .on { opacity: 1 !important; transform: none !important; filter: none !important; }
-.intro-sleek .glow.on { transform: scale(1) !important; }
-.intro-sleek .line.on { width: calc(var(--u) * 40); }
+.intro-sleek canvas { display: block; width: 100%; height: 100%; }
 .intro-sleek.out { opacity: 0; }
-@media (prefers-reduced-motion: reduce) {
-  .intro-sleek *, .intro-sleek { transition-duration: .01s !important; }
-}

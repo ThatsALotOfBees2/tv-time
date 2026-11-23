@@ -196,6 +196,19 @@
         lead.forEach(function (m, k) { if (m) tone('square', t + k * step, step * (k === 8 ? 5 : 0.9), hz(m), hz(m), 0.08); });
         [48, 55, 52, 55, 48].forEach(function (m, k) { tone('triangle', t + k * step * 2, step * (k === 4 ? 6 : 1.8), hz(m), hz(m), 0.2); });
       },
+      // sleek intro: a low rising swell, and a deep boom with a bright shimmer
+      swell: function () {
+        var t = now();
+        tone('sine', t, 2.2, 45, 90, 0.18);
+        noise(t, 2.2, 'lowpass', 600, 0.12);
+      },
+      boom: function () {
+        var t = now();
+        tone('sine', t, 1.4, 90, 32, 0.5);
+        noise(t, 1.2, 'lowpass', 300, 0.6);
+        noise(t, 1.6, 'highpass', 6000, 0.25);
+        [88, 95, 100].forEach(function (m, k) { tone('triangle', t + 0.02 * k, 1.2, hz(m), hz(m), 0.04); });
+      },
       // true when the browser hasn't allowed sound yet (it needs a button press first)
       blocked: function () { return ctx.state !== 'running'; },
       stop: function () {
@@ -285,60 +298,218 @@
   var DEFAULT_TIMING = { its: 0.3, t: 0.8, v: 1.05, time: 1.4, bang: 2.05 };
 
   // ======================================================================
-  // Sleek look: a calm, minimal intro (black, purple glow, the wordmark fading in on the voice line)
+  // Sleek look: "light gate" - purple light particles spiral in, lock into a spinning ring,
+  // a play symbol draws itself, then a flash, shockwave and burst open onto the start page.
+  // Timed to the voice line like the retro intro. No text.
   // ======================================================================
   function playSleek(opts) {
     var withSound = opts.sound !== false;
     var root = document.createElement('div');
     root.className = 'intro-sleek';
-    root.innerHTML = '<div class="glow"></div><div class="mark"><div class="its">It\u2019s</div>' +
-      '<div class="word"><span class="tv">T</span><span class="tv">V</span>&nbsp;<span>T</span><span>I</span><span>M</span><span>E</span></div>' +
-      '<div class="line"></div></div>';
+    var cv = document.createElement('canvas');
+    root.appendChild(cv);
     document.body.appendChild(root);
-    var glow = root.querySelector('.glow'), its = root.querySelector('.its'), line = root.querySelector('.line');
-    var spans = root.querySelectorAll('.word span');
-    var timers = [], finished = false, voice = null;
-    var synth = withSound ? makeSynth() : null;
-    function at(ms, fn) { timers.push(setTimeout(fn, ms)); }
-    function on(el) { el.classList.add('on'); }
+    var c = cv.getContext('2d');
+    var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    var W = cv.width = Math.round(innerWidth * dpr);
+    var H = cv.height = Math.round(innerHeight * dpr);
+    var cx = W / 2, cy = H / 2, R = Math.min(W, H) * 0.2;
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    function end(fast) {
+    var synth = withSound ? makeSynth() : null;
+    var voice = null, timing = null, endAt = 3, stageAt = -1, finished = false, exitAt = -1;
+    var played = {};
+    function once(k) { if (played[k]) return false; played[k] = true; return true; }
+
+    // particles: start scattered far outside the ring, end evenly around it
+    var N = reduce ? 160 : 650, P = [];
+    for (var i = 0; i < N; i++) {
+      P.push({
+        a: Math.random() * Math.PI * 2,
+        d: Math.max(W, H) * (0.6 + Math.random() * 0.7),
+        ta: i / N * Math.PI * 2,
+        tr: R * (0.9 + Math.random() * 0.2),
+        sp: 0.5 + Math.random(),
+        white: Math.random() < 0.12,
+        px: null, py: null
+      });
+    }
+    function clamp(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+    function ease(v) { v = clamp(v); return v * v * (3 - 2 * v); }
+
+    var t0 = performance.now(), LEAD = 0.7;
+    var load = withSound ? loadAudio('intro-sound', 1300) : Promise.resolve(null);
+    load.then(function (clip) {
+      voice = clip;
+      var d = clip && isFinite(clip.duration) && clip.duration > 0 ? clip.duration : 3;
+      timing = (clip && window.TVTIME_INTRO_TIMING) ||
+        { its: d * 0.02, t: d * 0.25, v: d * 0.41, time: d * 0.58, bang: d * 0.87 };
+      if (!clip) timing = { its: 0.1, t: 0.9, v: 1.3, time: 1.8, bang: 2.5 };
+      endAt = Math.max(d, timing.bang + 1.2);
+    });
+
+    function stageClock(T) {
+      if (voice && stageAt >= 0) {
+        if (voice.ended) return Math.max(T - stageAt, endAt);
+        if (!voice.paused || voice.currentTime > 0) return voice.currentTime;
+      }
+      return stageAt >= 0 ? Math.max(0, T - stageAt - (voice ? 0.3 : 0)) : 0;
+    }
+
+    function frame() {
+      if (finished) return;
+      var T = (performance.now() - t0) / 1000;
+      if (stageAt < 0 && timing && T >= LEAD) {
+        stageAt = T;
+        if (voice) voice.play().catch(function () {});
+        if (synth) synth.swell();
+      }
+      var s = stageClock(T);
+      var tm = timing || { its: 9, t: 9, v: 9, time: 9, bang: 9 };
+
+      var gather = ease((s - tm.its) / Math.max(0.4, tm.t - tm.its + 0.5));   // flying in
+      var lock = ease((s - tm.t) / 0.9);                                        // settled in the ring
+      var arcs = ease((s - tm.v) / 0.7);
+      var tri = clamp((s - tm.time) / 0.9);                                     // play symbol drawing
+      var bang = stageAt >= 0 && s >= tm.bang ? s - tm.bang : -1;
+      if (bang >= 0 && once('boom') && synth) synth.boom();
+
+      // trails: paint the dark background semi-transparently each frame
+      c.setTransform(1, 0, 0, 1, 0, 0);
+      c.globalCompositeOperation = 'source-over';
+      c.fillStyle = bang >= 0 ? 'rgba(5,5,7,0.22)' : 'rgba(5,5,7,0.3)';
+      c.fillRect(0, 0, W, H);
+
+      // a slow push in after the burst
+      var zoom = 1 + (bang >= 0 ? Math.min(bang, 1.5) * 0.12 : 0);
+      c.setTransform(zoom, 0, 0, zoom, cx * (1 - zoom), cy * (1 - zoom));
+      c.globalCompositeOperation = 'lighter';
+
+      // core glow
+      var core = 0.15 + 0.35 * lock + (bang >= 0 ? Math.max(0, 0.8 - bang) : 0);
+      var g = c.createRadialGradient(cx, cy, 0, cx, cy, R * (1.2 + lock * 0.8));
+      g.addColorStop(0, 'rgba(160,127,214,' + core + ')');
+      g.addColorStop(1, 'rgba(120,81,169,0)');
+      c.fillStyle = g;
+      c.beginPath(); c.arc(cx, cy, R * 2, 0, Math.PI * 2); c.fill();
+
+      // light rays after the burst
+      if (bang >= 0 && !reduce) {
+        var rays = 14, ra = Math.max(0, 0.5 - bang * 0.25);
+        for (var k = 0; k < rays; k++) {
+          var ang = k / rays * Math.PI * 2 + bang * 0.4;
+          c.save();
+          c.translate(cx, cy);
+          c.rotate(ang);
+          var lg = c.createLinearGradient(0, 0, Math.max(W, H), 0);
+          lg.addColorStop(0, 'rgba(200,180,255,' + ra + ')');
+          lg.addColorStop(1, 'rgba(120,81,169,0)');
+          c.fillStyle = lg;
+          c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.max(W, H), -R * 0.18); c.lineTo(Math.max(W, H), R * 0.18); c.closePath(); c.fill();
+          c.restore();
+        }
+      }
+
+      // particles
+      var spin = s * 0.4;
+      c.lineWidth = 1.4 * dpr;
+      c.lineCap = 'round';
+      for (var j = 0; j < N; j++) {
+        var p = P[j];
+        var r = p.d + (p.tr - p.d) * gather;
+        var aNow = p.a + (1 - gather) * 4 * p.sp + spin;
+        var ringA = p.ta + spin;
+        var A = aNow + (ringA - aNow) * lock;
+        if (bang >= 0) r = p.tr + (bang * bang * 0.6 + bang * 0.8) * Math.max(W, H) * 0.45 * p.sp;
+        var x = cx + Math.cos(A) * r, y = cy + Math.sin(A) * r;
+        if (stageAt >= 0 && p.px !== null) {
+          var alpha = bang >= 0 ? Math.max(0, 0.9 - bang * 0.45) : 0.25 + 0.65 * gather;
+          c.strokeStyle = p.white ? 'rgba(255,255,255,' + alpha + ')' : 'rgba(160,127,214,' + alpha + ')';
+          c.beginPath(); c.moveTo(p.px, p.py); c.lineTo(x, y); c.stroke();
+        }
+        p.px = x; p.py = y;
+      }
+
+      // two counter-rotating arcs inside the ring
+      if (arcs > 0 && bang < 0.6) {
+        var fade = arcs * (bang >= 0 ? 1 - bang / 0.6 : 1);
+        c.lineWidth = 2 * dpr;
+        c.strokeStyle = 'rgba(200,180,255,' + 0.6 * fade + ')';
+        c.beginPath(); c.arc(cx, cy, R * 0.72, s * 1.3, s * 1.3 + 1.6 * arcs); c.stroke();
+        c.beginPath(); c.arc(cx, cy, R * 0.58, -s * 1.7, -s * 1.7 + 1.1 * arcs); c.stroke();
+      }
+
+      // the play symbol drawing itself
+      if (tri > 0 && bang < 0.8) {
+        var pts = [[cx - R * 0.22, cy - R * 0.3], [cx + R * 0.32, cy], [cx - R * 0.22, cy + R * 0.3]];
+        var segs = [], total = 0;
+        for (var q = 0; q < 3; q++) {
+          var A1 = pts[q], B1 = pts[(q + 1) % 3];
+          var len = Math.hypot(B1[0] - A1[0], B1[1] - A1[1]);
+          segs.push([A1, B1, len]); total += len;
+        }
+        var want = total * tri, triA = bang >= 0 ? 1 - bang / 0.8 : 1;
+        c.strokeStyle = 'rgba(255,255,255,' + 0.95 * triA + ')';
+        c.lineWidth = 3 * dpr;
+        c.shadowColor = 'rgba(160,127,214,1)';
+        c.shadowBlur = 20 * dpr;
+        c.beginPath();
+        c.moveTo(pts[0][0], pts[0][1]);
+        for (var q2 = 0; q2 < 3 && want > 0; q2++) {
+          var sg = segs[q2], f = Math.min(1, want / sg[2]);
+          c.lineTo(sg[0][0] + (sg[1][0] - sg[0][0]) * f, sg[0][1] + (sg[1][1] - sg[0][1]) * f);
+          want -= sg[2];
+        }
+        c.stroke();
+        if (tri >= 1) {
+          c.fillStyle = 'rgba(160,127,214,' + 0.25 * triA + ')';
+          c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); c.lineTo(pts[1][0], pts[1][1]); c.lineTo(pts[2][0], pts[2][1]); c.closePath(); c.fill();
+        }
+        c.shadowBlur = 0;
+      }
+
+      // shockwave and flash
+      if (bang >= 0) {
+        var sw = R * (1 + bang * 7);
+        c.lineWidth = Math.max(1, (12 - bang * 8)) * dpr;
+        c.strokeStyle = 'rgba(200,180,255,' + Math.max(0, 0.7 - bang * 0.5) + ')';
+        c.beginPath(); c.arc(cx, cy, sw, 0, Math.PI * 2); c.stroke();
+        var fl = Math.max(0, 0.85 - bang * 2.2);
+        if (fl > 0 && !reduce) {
+          c.setTransform(1, 0, 0, 1, 0, 0);
+          c.globalCompositeOperation = 'source-over';
+          c.fillStyle = 'rgba(235,225,255,' + fl + ')';
+          c.fillRect(0, 0, W, H);
+        }
+      }
+
+      if (exitAt < 0 && timing && stageAt >= 0 && s >= endAt) exitAt = T;
+      if (exitAt >= 0) {
+        root.classList.add('out');
+        if (T - exitAt > 0.65) { end(); return; }
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function end() {
       if (finished) return;
       finished = true;
-      timers.forEach(clearTimeout);
       window.removeEventListener('keydown', onKey, true);
       if (voice) voice.pause();
       if (synth) synth.stop();
-      root.classList.add('out');
-      setTimeout(function () { root.remove(); running = false; }, fast ? 250 : 650);
+      root.remove();
+      running = false;
     }
-    function onKey(e) { e.preventDefault(); e.stopImmediatePropagation(); end(true); }
+    function skip() {
+      if (exitAt >= 0) return;
+      if (performance.now() - t0 < 400) return;
+      exitAt = (performance.now() - t0) / 1000;
+      if (voice) voice.pause();
+    }
+    function onKey(e) { e.preventDefault(); e.stopImmediatePropagation(); skip(); }
     window.addEventListener('keydown', onKey, true);
-    root.addEventListener('click', function () { end(true); });
-
-    at(50, function () { on(glow); });
-    var load = withSound ? loadAudio('intro-sound', 1300) : Promise.resolve(null);
-    load.then(function (clip) {
-      if (finished) return;
-      voice = clip;
-      var d = clip && isFinite(clip.duration) && clip.duration > 0 ? clip.duration : 2.6;
-      var tm = (clip && window.TVTIME_INTRO_TIMING) ||
-        { its: d * 0.02, t: d * 0.25, v: d * 0.41, time: d * 0.58, bang: d * 0.87 };
-      var lead = 350;
-      if (clip) at(lead, function () { clip.play().catch(function () {}); });
-      var ms = function (sec) { return lead + sec * 1000; };
-      at(ms(tm.its), function () { on(its); });
-      at(ms(tm.t), function () { on(spans[0]); });
-      at(ms(tm.v), function () { on(spans[1]); });
-      for (var k = 2; k < spans.length; k++) {
-        (function (n, i) { at(ms(tm.time) + i * 110, function () { on(n); }); })(spans[k], k - 2);
-      }
-      at(ms(tm.bang), function () {
-        on(line);
-        if (synth && synth.sparkle) synth.sparkle();
-      });
-      at(ms(Math.max(d, tm.bang + 0.6)) + 900, function () { end(false); });
-    });
+    root.addEventListener('click', skip);
+    requestAnimationFrame(frame);
   }
 
   function play(opts) {
