@@ -153,6 +153,25 @@ Needs the Android SDK (Android Studio, or command-line tools with `ANDROID_HOME`
 # -> app/build/outputs/apk/release/app-release.apk
 ```
 
+## TV Time for PC
+
+`desktop/` is a desktop app (Electron) for Windows, macOS and Linux: the same start page and
+intros, opening in the **Sleek** look, with **Ghostery's ad blocker** built in (EasyList,
+EasyPrivacy, uBlock filters, cosmetic filtering and scriptlets - the same kind of lists Brave
+Shields and uBlock Origin use, refreshed on every start), pop-ups refused and the redirect guard.
+
+Download from the latest release:
+* Windows: `tv-time-setup.exe` (installs it) or `tv-time-portable.exe` (just run it)
+* macOS: `tv-time.dmg` · Linux: `tv-time.AppImage`
+
+The files aren't code-signed, so Windows SmartScreen says "Windows protected your PC": click
+*More info* > *Run anyway* (macOS: right-click the app > *Open*).
+
+Keys: **F11** full screen · **Home** / **Ctrl+H** start page · **Alt+Left**, **Backspace** or the
+mouse's back button: back · **F5** reload · **Ctrl+Q** quit.
+
+Run from source: `cd desktop && npm install && npm start` (build installers: `npm run dist`).
+
 ## Raspberry Pi
 
 Turns a Raspberry Pi (4 or 5 recommended) into a TV box: it boots straight to the TV Time start

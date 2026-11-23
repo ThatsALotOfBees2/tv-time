@@ -190,7 +190,9 @@
 
   function renderHints() {
     var h = document.getElementById('hints');
-    var items = isAndroid
+    var items = window.tvtimeDesktop
+      ? [['Mouse / &#9664;&#9654;', 'Choose'], ['Enter', 'Open'], ['Alt+&#8592;', 'Back'], ['Home', 'This screen'], ['F11', 'Full screen']]
+      : isAndroid
       ? [['&#9664;&#9654;', 'Choose'], ['OK', 'Open'], ['Hold OK', 'Menu'], ['Back', 'Exit']]
       : [['&#9664;&#9654;', 'Move'], ['OK', 'Open'], ['Hold OK', 'Arrow-key mode'], ['Hold Back', 'This screen']];
     h.innerHTML = items.map(function (i) { return '<span><kbd>' + i[0] + '</kbd>' + i[1] + '</span>'; }).join('');

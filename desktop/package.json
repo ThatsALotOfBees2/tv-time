@@ -1,0 +1,32 @@
+{
+  "name": "tv-time",
+  "productName": "TV Time",
+  "version": "1.0.0",
+  "description": "TV Time for PC: the TV Time start page, Streamex and YouTube with a built-in ad blocker.",
+  "main": "main.js",
+  "author": "TV Time",
+  "license": "MIT",
+  "scripts": {
+    "prepare-web": "node prepare-web.js",
+    "start": "npm run prepare-web && electron .",
+    "dist": "npm run prepare-web && electron-builder --publish never"
+  },
+  "dependencies": {
+    "@ghostery/adblocker-electron": "2.20.3"
+  },
+  "devDependencies": {
+    "electron": "44.11.5",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "com.tvtime.desktop",
+    "productName": "TV Time",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "preload.js", "web/**/*", "build/icon.png"],
+    "win": { "target": ["nsis", "portable"], "icon": "build/icon.png" },
+    "nsis": { "oneClick": true, "artifactName": "tv-time-setup.${ext}" },
+    "portable": { "artifactName": "tv-time-portable.${ext}" },
+    "linux": { "target": ["AppImage"], "category": "Video", "artifactName": "tv-time.${ext}" },
+    "mac": { "target": ["dmg"], "category": "public.app-category.entertainment", "artifactName": "tv-time.${ext}" }
+  }
+}
